@@ -4,9 +4,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api/v1');
+  app.enableCors();
+  // app.setGlobalPrefix('api/v1');
   const options = new DocumentBuilder()
-    .setTitle('Eveny Management API Collection')
+    .setTitle('Event Management API Collection')
     .setDescription('APIs required for frontend apps.')
     .setVersion('1.0')
     .addServer('http://localhost:3000/', 'Local environment')
