@@ -20,7 +20,7 @@ export class EventService {
       const created = await this.eventRespository.save(createEventDto);
       return response
         .status(HttpStatus.CREATED)
-        .send(APIResponse.success(apiId, created, 'OK'));
+        .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'OK'));
     }
     catch (e) {
       return response
