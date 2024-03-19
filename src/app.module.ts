@@ -7,8 +7,8 @@ import { DatabaseModule } from './common/database-modules';
 
 
 @Module({
-  imports: [ConfigModule.forRoot(),EventModule,DatabaseModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), EventModule, DatabaseModule],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
