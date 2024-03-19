@@ -31,15 +31,14 @@ export class EventController {
     return this.eventService.createEvent(createEventDto, response);
   }
 
-
   @Get('/getAllEvents')
   async findAll() {
     return this.eventService.getEvents();
   }
 
   @Get('getEventById/:id')
-  findOne(@Param('id') id: string) {
-    return this.eventService.getEventByID(id);
+  findOne(@Param('id') id: string, @Res() response: Response) {
+    return this.eventService.getEventByID(id, response);
   }
 
   @Patch('/updateEvent/:eventId')

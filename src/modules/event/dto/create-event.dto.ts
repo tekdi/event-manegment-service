@@ -17,7 +17,7 @@ export class CreateEventDto {
 
   @ApiProperty({
     type: String,
-    description: 'shortDescription',
+    description: 'Short Description',
     example: 'This is a sample event'
   })
   @IsString()
@@ -27,7 +27,7 @@ export class CreateEventDto {
 
   @ApiProperty({
     type: String,
-    description: 'description',
+    description: 'Description',
     example: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
   })
   @IsString()
@@ -47,7 +47,7 @@ export class CreateEventDto {
 
   @ApiProperty({
     type: String,
-    description: 'eventType',
+    description: 'Event Type',
     example: 'Conference'
   })
   @IsString()
@@ -78,53 +78,97 @@ export class CreateEventDto {
   @IsDateString()
   endDatetime: string;
 
-  @ApiProperty({ type: String, description: 'Location', example: 'Event Location' })
+  @ApiProperty({
+    type: String,
+    description: 'Location',
+    example: 'Event Location'
+  })
   @IsString()
   @IsNotEmpty()
   location: string;
 
 
-  @ApiProperty({ type: Number, description: 'Latitude' })
+  @ApiProperty({
+    type: Number,
+    description: 'Latitude',
+    example: 18.508345134886994
+  })
   @IsLongitude()
   longitude: number;
 
-  @ApiProperty({ type: Number, description: 'Latitude' })
+  @ApiProperty({
+    type: Number,
+    description: 'Latitude',
+    example: 18.508345134886994
+  })
   @IsLatitude()
   latitude: number;
 
-  @ApiProperty({ type: String, description: 'Online Provider', example: 'Zoom' })
+  @ApiProperty({
+    type: String,
+    description: 'Online Provider',
+    example: 'Zoom'
+  })
   @IsString()
   @IsNotEmpty()
   onlineProvider: string;
 
-  @ApiProperty({ type: String, description: 'Registration Deadline', example: '2024-03-17T23:59:59Z' })
+  @ApiProperty({
+    type: String,
+    description: 'Registration Deadline',
+    example: '2024-03-17T23:59:59Z'
+  })
   @IsDateString()
   registrationDeadline: string;
 
-  @ApiProperty({ type: Number, description: 'Max Attendees', example: 100 })
+  @ApiProperty({
+    type: Number,
+    description: 'Max Attendees',
+    example: 100
+  })
   @IsInt()
   @Min(0)
   maxAttendees: number;
 
-  @ApiProperty({ type: Object, description: 'Params', example: { key: 'value' } })
+  @ApiProperty({
+    type: Object,
+    description: 'Params',
+    example: { key: 'value' }
+  })
   @IsObject()
   params: any;
 
-  @ApiProperty({ type: Object, description: 'Recordings', example: { url: 'https://example.com/recording' } })
+  @ApiProperty({
+    type: Object,
+    description: 'Recordings',
+    example: { url: 'https://example.com/recording' }
+  })
   @IsObject()
   recordings: any;
 
-  @ApiProperty({ type: String, description: 'Status', example: 'Active' })
+  @ApiProperty({
+    type: String,
+    description: 'Status',
+    example: 'Active'
+  })
   @IsString()
   @IsNotEmpty()
   status: string;
 
-  @ApiProperty({ type: String, description: 'Created By', example: 'John Doe' })
+  @ApiProperty({
+    type: String,
+    description: 'Created By',
+    example: 'John Doe'
+  })
   @IsString()
   @IsNotEmpty()
   createdBy: string;
 
-  @ApiProperty({ type: String, description: 'updated By', example: 'John Doe' })
+  @ApiProperty({
+    type: String,
+    description: 'updated By',
+    example: 'John Doe'
+  })
   @IsString()
   @IsNotEmpty()
   updatedBy: string;
