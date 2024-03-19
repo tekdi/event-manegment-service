@@ -39,9 +39,37 @@ export class EventService {
     return getData;
   }
 
-  async getEventByID(id) {
-    let data = await this.hasuraService.getEventDetailById(id);
-    return data;
+  async getEventByID(eventID: string, response: Response) {
+    const apiId = 'api.get.event.byId'
+    try {
+      const getEventById = await this.eventRespository.findOne({ where: { eventID } });
+      if (!getEventById) {
+        return response
+          .status(HttpStatus.NOT_FOUND)
+          .send(
+            APIResponse.error(
+              apiId,
+              `No event found for: ${eventID}`,
+              'No records found.',
+              'NOT_FOUND',
+            ),
+          );
+      }
+      return response
+        .status(HttpStatus.OK)
+        .send(APIResponse.success(apiId, getEventById, 'OK'))
+
+    }
+    catch (e) {
+      return response
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .send(APIResponse.error(
+          apiId,
+          'Something went wrong to get event by id',
+          `Failure Retrieving event. Error is: ${e}`,
+          'INTERNAL_SERVER_ERROR',
+        ))
+    }
   }
 
   findOne(id: number) {
