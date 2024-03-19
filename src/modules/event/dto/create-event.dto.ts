@@ -1,8 +1,8 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEventDto {
-  @IsUUID()
+  // @IsUUID()
   eventID: string;
 
   @ApiProperty({
@@ -57,7 +57,7 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'isRestricted',
-    example: 'false'
+    example: false
   })
   @IsBoolean()
   isRestricted: boolean;
@@ -107,11 +107,11 @@ export class CreateEventDto {
   maxAttendees: number;
 
   @ApiProperty({ type: Object, description: 'Params', example: { key: 'value' } })
-  @IsJSON()
+  @IsObject()
   params: any;
 
   @ApiProperty({ type: Object, description: 'Recordings', example: { url: 'https://example.com/recording' } })
-  @IsJSON()
+  @IsObject()
   recordings: any;
 
   @ApiProperty({ type: String, description: 'Status', example: 'Active' })

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Res, ValidationPipe } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -21,6 +21,7 @@ export class EventController {
 
   @Post('/createEvent')
   @ApiBody({ type: CreateEventDto })
+  @UsePipes(new ValidationPipe({ transform: true }))
   @ApiCreatedResponse({
     description: 'Created Event',
   })
