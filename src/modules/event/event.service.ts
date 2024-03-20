@@ -40,37 +40,7 @@ export class EventService {
       let finalquery = `SELECT * FROM "Events"`;
       const { filters } = requestBody;
       if (filters && Object.keys(filters).length > 0) {
-        let whereClause = false;
-        if (filters.title && filters.title !== "") {
-          finalquery += ` WHERE "title" LIKE '%${filters.title}%'`;
-          whereClause = true;
-        }
-        if (filters.eventType && filters.eventType.length > 0) {
-          let eventTypeConditions = [];
-          filters.eventType.forEach((eventType) => {
-            eventTypeConditions.push(`"eventType" = '${eventType}'`);
-          });
-          finalquery += whereClause ? ` AND (${eventTypeConditions.join(' OR ')})` : ` WHERE (${eventTypeConditions.join(' OR ')})`;
-          whereClause = true;
-        }
-        if (filters.status && filters.status.length > 0) {
-          let statusConditions = [];
-          filters.status.forEach((status) => {
-            statusConditions.push(`"status" = '${status}'`);
-          });
-          finalquery += whereClause ? ` AND (${statusConditions.join(' OR ')})` : ` WHERE (${statusConditions.join(' OR ')})`;
-          whereClause = true;
-        }
-        if (filters.startDate && filters.endDate) {
-          finalquery += whereClause ? ` AND "startDatetime" >= TIMESTAMP '${filters.startDate}' AND "endDatetime" <= '${filters.endDate}'` : ` WHERE "startDatetime" >= '${filters.startDate}' AND "endDatetime" <= '${filters.endDate}'`;
-        } else if (filters.startDate) {
-          finalquery += whereClause ? ` AND "startDatetime" >= TIMESTAMP '${filters.startDate}'` : ` WHERE "startDatetime" >= TIMESTAMP '${filters.startDate}'`;
-        } else if (filters.endDate) {
-          finalquery += whereClause ? ` AND "endDatetime" <=  TIMESTAMP '${filters.endDate}'` : ` WHERE "endDatetime" TIMESTAMP <= '${filters.endDate}'`;
-        }
-        if (filters.createdBy && filters.createdBy !== "") {
-          finalquery += whereClause ? ` AND "createdBy" LIKE '%${filters.createdBy}%'` : ` WHERE "createdBy" = '${filters.createdBy}'`;
-        }
+        finalquery = await this.createSearchQuery(filters, finalquery);
       }
       const result = await this.eventRespository.query(finalquery);
       if (result.length === 0) {
@@ -144,5 +114,40 @@ export class EventService {
 
   remove(id: number) {
     return `This action removes a #${id} event`;
+  }
+
+  async createSearchQuery(filters, finalquery) {
+    let whereClause = false;
+    if (filters.title && filters.title !== "") {
+      finalquery += ` WHERE "title" LIKE '%${filters.title}%'`;
+      whereClause = true;
+    }
+    if (filters.eventType && filters.eventType.length > 0) {
+      let eventTypeConditions = [];
+      filters.eventType.forEach((eventType) => {
+        eventTypeConditions.push(`"eventType" = '${eventType}'`);
+      });
+      finalquery += whereClause ? ` AND (${eventTypeConditions.join(' OR ')})` : ` WHERE (${eventTypeConditions.join(' OR ')})`;
+      whereClause = true;
+    }
+    if (filters.status && filters.status.length > 0) {
+      let statusConditions = [];
+      filters.status.forEach((status) => {
+        statusConditions.push(`"status" = '${status}'`);
+      });
+      finalquery += whereClause ? ` AND (${statusConditions.join(' OR ')})` : ` WHERE (${statusConditions.join(' OR ')})`;
+      whereClause = true;
+    }
+    if (filters.startDate && filters.endDate) {
+      finalquery += whereClause ? ` AND "startDatetime" >= TIMESTAMP '${filters.startDate}' AND "endDatetime" <= '${filters.endDate}'` : ` WHERE "startDatetime" >= '${filters.startDate}' AND "endDatetime" <= '${filters.endDate}'`;
+    } else if (filters.startDate) {
+      finalquery += whereClause ? ` AND "startDatetime" >= TIMESTAMP '${filters.startDate}'` : ` WHERE "startDatetime" >= TIMESTAMP '${filters.startDate}'`;
+    } else if (filters.endDate) {
+      finalquery += whereClause ? ` AND "endDatetime" <=  TIMESTAMP '${filters.endDate}'` : ` WHERE "endDatetime" TIMESTAMP <= '${filters.endDate}'`;
+    }
+    if (filters.createdBy && filters.createdBy !== "") {
+      finalquery += whereClause ? ` AND "createdBy" LIKE '%${filters.createdBy}%'` : ` WHERE "createdBy" = '${filters.createdBy}'`;
+    }
+    return finalquery;
   }
 }
