@@ -9,17 +9,19 @@ import {
   ApiCreatedResponse,
   ApiHeader,
   ApiInternalServerErrorResponse,
+  ApiOkResponse,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { Response } from 'express';
+import { SearchFilterDto } from './dto/search-event.dto';
 
-@Controller('event')
+@Controller('event/v1')
 @ApiTags('Create Event')
 export class EventController {
   constructor(private readonly eventService: EventService) { }
 
-  @Post('/createEvent')
+  @Post('/create')
   @ApiBody({ type: CreateEventDto })
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiCreatedResponse({
@@ -31,22 +33,28 @@ export class EventController {
     return this.eventService.createEvent(createEventDto, response);
   }
 
-  @Get('/getAllEvents')
-  async findAll() {
-    return this.eventService.getEvents();
+  @Post('/list')
+  @ApiBody({ type: SearchFilterDto })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiOkResponse({
+    description: 'Searched ',
+    status: 200
+  })
+  async findAll(@Res() response: Response, @Body() requestBody: SearchFilterDto) {
+    return this.eventService.getEvents(response, requestBody);
   }
 
-  @Get('getEventById/:id')
+  @Get('/:id')
   findOne(@Param('id') id: string, @Res() response: Response) {
     return this.eventService.getEventByID(id, response);
   }
 
-  @Patch('/updateEvent/:eventId')
+  @Patch('/:eventId')
   update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
     return this.eventService.update(+id, updateEventDto);
   }
 
-  @Delete('deleteEvent/:eventId')
+  @Delete('/:eventId')
   remove(@Param('id') id: string) {
     return this.eventService.remove(+id);
   }

@@ -1,16 +1,16 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { HasuraService } from 'src/services/hasura/hasura.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Event } from './entities/event.entity';
-import { Response, response } from 'express';
+import { Response, query, response } from 'express';
 import APIResponse from 'src/common/utils/response';
+import { SearchFilterDto } from './dto/search-event.dto';
 
 @Injectable()
 export class EventService {
-  constructor(private readonly hasuraService: HasuraService,
+  constructor(
     @InjectRepository(Event)
     private readonly eventRespository: Repository<Event>
   ) { }
@@ -34,9 +34,71 @@ export class EventService {
     }
   }
 
-  async getEvents() {
-    let getData = await this.hasuraService.getEventDetails()
-    return getData;
+  async getEvents(response: Response, requestBody: SearchFilterDto) {
+    const apiId = 'api.Search.Event'
+    try {
+      let finalquery = `SELECT * FROM "Events"`;
+      const { filters } = requestBody;
+      if (filters && Object.keys(filters).length > 0) {
+        let whereClause = false;
+        if (filters.title && filters.title !== "") {
+          finalquery += ` WHERE "title" LIKE '%${filters.title}%'`;
+          whereClause = true;
+        }
+        if (filters.eventType && filters.eventType.length > 0) {
+          let eventTypeConditions = [];
+          filters.eventType.forEach((eventType) => {
+            eventTypeConditions.push(`"eventType" = '${eventType}'`);
+          });
+          finalquery += whereClause ? ` AND (${eventTypeConditions.join(' OR ')})` : ` WHERE (${eventTypeConditions.join(' OR ')})`;
+          whereClause = true;
+        }
+        if (filters.status && filters.status.length > 0) {
+          let statusConditions = [];
+          filters.status.forEach((status) => {
+            statusConditions.push(`"status" = '${status}'`);
+          });
+          finalquery += whereClause ? ` AND (${statusConditions.join(' OR ')})` : ` WHERE (${statusConditions.join(' OR ')})`;
+          whereClause = true;
+        }
+        if (filters.startDate && filters.endDate) {
+          finalquery += whereClause ? ` AND "startDatetime" >= TIMESTAMP '${filters.startDate}' AND "endDatetime" <= '${filters.endDate}'` : ` WHERE "startDatetime" >= '${filters.startDate}' AND "endDatetime" <= '${filters.endDate}'`;
+        } else if (filters.startDate) {
+          finalquery += whereClause ? ` AND "startDatetime" >= TIMESTAMP '${filters.startDate}'` : ` WHERE "startDatetime" >= TIMESTAMP '${filters.startDate}'`;
+        } else if (filters.endDate) {
+          finalquery += whereClause ? ` AND "endDatetime" <=  TIMESTAMP '${filters.endDate}'` : ` WHERE "endDatetime" TIMESTAMP <= '${filters.endDate}'`;
+        }
+        if (filters.createdBy && filters.createdBy !== "") {
+          finalquery += whereClause ? ` AND "createdBy" LIKE '%${filters.createdBy}%'` : ` WHERE "createdBy" = '${filters.createdBy}'`;
+        }
+      }
+      const result = await this.eventRespository.query(finalquery);
+      if (result.length === 0) {
+        return response
+          .status(HttpStatus.NOT_FOUND)
+          .send(
+            APIResponse.error(
+              apiId,
+              `No event found`,
+              'No records found.',
+              'NOT_FOUND',
+            ),
+          );
+      }
+      return response
+        .status(HttpStatus.OK)
+        .send(APIResponse.success(apiId, result, "OK"));
+    }
+    catch (e) {
+      return response
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .send(APIResponse.error(
+          apiId,
+          'Something went wrong to search event',
+          JSON.stringify(e),
+          'INTERNAL_SERVER_ERROR',
+        ))
+    }
   }
 
   async getEventByID(eventID: string, response: Response) {
