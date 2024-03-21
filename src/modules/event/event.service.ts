@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -112,8 +112,44 @@ export class EventService {
     return `This action updates a #${id} event`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} event`;
+  async deleteEvent(eventID: string, response: Response) {
+    const apiId = 'api.delete.event'
+    try {
+      const event_id = await this.eventRespository.findOne({ where: { eventID } })
+      if (!event_id) {
+        return response.status(HttpStatus.NOT_FOUND).send(
+          APIResponse.error(
+            apiId,
+            `No event id found: ${eventID}`,
+            'records not found.',
+            'NOT_FOUND',
+          ),
+        );
+      }
+      const deletedEvent = await this.eventRespository.delete({ eventID });
+      if (deletedEvent.affected !== 1) {
+        throw new BadRequestException('Event not deleted');
+      }
+      return response
+        .status(HttpStatus.OK)
+        .send(
+          APIResponse.success(
+            apiId,
+            { status: `Event with ID ${eventID} deleted successfully.` },
+            'OK',
+          ),
+        );
+    }
+    catch (e) {
+      return response
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .send(APIResponse.error(
+          apiId,
+          'Something went wrong to get event by id',
+          `Failure Retrieving event. Error is: ${e}`,
+          'INTERNAL_SERVER_ERROR',
+        ))
+    }
   }
 
   async createSearchQuery(filters, finalquery) {
