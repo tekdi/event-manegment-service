@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -108,8 +108,41 @@ export class EventService {
     return `This action returns a #${id} event`;
   }
 
-  update(id: number, updateEventDto: UpdateEventDto) {
-    return `This action updates a #${id} event`;
+  async updateEvent(eventID: string, updateEventDto: UpdateEventDto, response: Response) {
+    const apiId = 'api.update.event';
+    try {
+      const event = await this.eventRespository.findOne({ where: { eventID } })
+      if (!event) {
+        return response.status(HttpStatus.NOT_FOUND).send(
+          APIResponse.error(
+            apiId,
+            `No event found for: ${eventID}`,
+            'records not found.',
+            'NOT_FOUND',
+          ),
+        );
+      }
+      Object.assign(event, updateEventDto);
+      const updated_result = await this.eventRespository.save(event);
+      console.log(updated_result);
+
+      if (!updated_result) {
+        throw new BadRequestException('Event update failed');
+      }
+      return response
+        .status(HttpStatus.CREATED)
+        .send(APIResponse.success(apiId, { id: eventID, status: 'updated Successfully' }, 'OK'))
+    }
+    catch (e) {
+      return response
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .send(APIResponse.error(
+          apiId,
+          'Something went wrong to update the event',
+          `Failure to update event Error is: ${e}`,
+          'INTERNAL_SERVER_ERROR',
+        ))
+    }
   }
 
   remove(id: number) {

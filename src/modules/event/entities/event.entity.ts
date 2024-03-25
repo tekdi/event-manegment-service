@@ -58,9 +58,15 @@ export class Event {
     @Column({ nullable: false })
     createdBy: string;
 
+    @Column({ nullable: false })
+    updatedBy: string;
+
+
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
     @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
+
+
 }

@@ -49,9 +49,12 @@ export class EventController {
     return this.eventService.getEventByID(id, response);
   }
 
-  @Patch('/:eventId')
-  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
-    return this.eventService.update(+id, updateEventDto);
+
+  @Patch('/:id')
+  @ApiBody({ type: CreateEventDto })
+  @UsePipes(new ValidationPipe({ transform: true }))
+  updateEvent(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto, @Res() response: Response) {
+    return this.eventService.updateEvent(id, updateEventDto, response);
   }
 
   @Delete('/:eventId')
