@@ -11,10 +11,12 @@ import {
   ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { SearchFilterDto } from './dto/search-event.dto';
+import { EventValidationPipe } from 'src/common/pipes/event-validation.pipe';
 
 @Controller('event/v1')
 @ApiTags('Create Event')
@@ -23,7 +25,7 @@ export class EventController {
 
   @Post('/create')
   @ApiBody({ type: CreateEventDto })
-  @UsePipes(new ValidationPipe({ transform: true }))
+  @UsePipes(new EventValidationPipe(), new ValidationPipe({ transform: true }))
   @ApiCreatedResponse({
     description: 'Created Event',
   })
@@ -37,7 +39,7 @@ export class EventController {
   @ApiBody({ type: SearchFilterDto })
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiOkResponse({
-    description: 'Searched ',
+    description: 'Searched',
     status: 200
   })
   async findAll(@Res() response: Response, @Body() requestBody: SearchFilterDto) {
@@ -45,19 +47,26 @@ export class EventController {
   }
 
   @Get('/:id')
+  @ApiOkResponse({
+    description: 'Get event details by id',
+    status: 200
+  })
   findOne(@Param('id') id: string, @Res() response: Response) {
     return this.eventService.getEventByID(id, response);
   }
 
-
   @Patch('/:id')
   @ApiBody({ type: CreateEventDto })
+  @ApiResponse({ status: 200, description: 'Event updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   @UsePipes(new ValidationPipe({ transform: true }))
   updateEvent(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto, @Res() response: Response) {
     return this.eventService.updateEvent(id, updateEventDto, response);
   }
 
   @Delete('/:id')
+  @ApiResponse({ status: 200, description: 'Event deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Event not found' })
   deleteEvent(@Param('id') id: string, @Res() response: Response) {
     return this.eventService.deleteEvent(id, response);
   }

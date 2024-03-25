@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString, IsObject } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsEnum, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEventDto {
@@ -48,8 +48,12 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'Event Type',
-    example: 'Conference'
+    example: 'online'
   })
+  @IsEnum(['online', 'offline', 'onlineandoffline'], {
+    message: 'Event Type must be one of: online, offline, onlineandoffline'
+  }
+  )
   @IsString()
   @IsNotEmpty()
   eventType: string;
@@ -57,7 +61,7 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'isRestricted',
-    example: false
+    example: true
   })
   @IsBoolean()
   isRestricted: boolean;
@@ -116,7 +120,7 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'Registration Deadline',
-    example: '2024-03-17T23:59:59Z'
+    example: '2024-03-18T10:00:00Z'
   })
   @IsDateString()
   registrationDeadline: string;
@@ -149,7 +153,10 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'Status',
-    example: 'Active'
+    example: 'live'
+  })
+  @IsEnum(['live', 'draft', 'inActive'], {
+    message: 'Status must be one of: live, draft, inActive',
   })
   @IsString()
   @IsNotEmpty()

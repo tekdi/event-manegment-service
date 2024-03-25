@@ -12,11 +12,11 @@ export class FilterDto {
     endDate: string;
 
     @ApiProperty({
-        example: ['Live', 'Draft', 'Inactive'],
-        description: 'Array of status values: Live, Draft, Inactive'
+        example: ['live', 'draft', 'inActive'],
+        description: 'Array of status values: live, draft, inActive'
     })
     @IsOptional()
-    @IsEnum(['Live', 'Draft', 'Inactive'], { each: true })
+    @IsEnum(['live', 'draft', 'inActive'], { each: true })
     status?: string[];
 
     @ApiProperty({
