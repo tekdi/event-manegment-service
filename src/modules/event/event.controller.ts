@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Res, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Res, ValidationPipe, BadRequestException } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -56,11 +56,14 @@ export class EventController {
   }
 
   @Patch('/:id')
-  @ApiBody({ type: CreateEventDto })
+  @ApiBody({ type: UpdateEventDto })
   @ApiResponse({ status: 200, description: 'Event updated successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @UsePipes(new ValidationPipe({ transform: true }))
   updateEvent(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto, @Res() response: Response) {
+    if (!updateEventDto || Object.keys(updateEventDto).length === 0) {
+      throw new BadRequestException('Please do not pass empty body')
+    }
     return this.eventService.updateEvent(id, updateEventDto, response);
   }
 
