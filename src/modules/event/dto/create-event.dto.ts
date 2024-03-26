@@ -72,7 +72,7 @@ export class CreateEventDto {
     example: '2024-03-18T10:00:00Z'
   })
   @IsDateString()
-  startDatetime: string;
+  startDatetime: Date;
 
   @ApiProperty({
     type: String,
@@ -80,7 +80,7 @@ export class CreateEventDto {
     example: '2024-03-18T10:00:00Z'
   })
   @IsDateString()
-  endDatetime: string;
+  endDatetime: Date;
 
   @ApiProperty({
     type: String,
@@ -123,7 +123,7 @@ export class CreateEventDto {
     example: '2024-03-18T10:00:00Z'
   })
   @IsDateString()
-  registrationDeadline: string;
+  registrationDeadline: Date;
 
   @ApiProperty({
     type: Number,

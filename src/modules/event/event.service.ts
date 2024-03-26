@@ -4,9 +4,10 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Event } from './entities/event.entity';
-import { Response, query, response } from 'express';
+import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
 import { SearchFilterDto } from './dto/search-event.dto';
+import { EventValidationPipe } from 'src/common/pipes/event-validation.pipe';
 
 @Injectable()
 export class EventService {
@@ -123,9 +124,8 @@ export class EventService {
         );
       }
       Object.assign(event, updateEventDto);
+      new EventValidationPipe().transform(event);
       const updated_result = await this.eventRespository.save(event);
-      console.log(updated_result);
-
       if (!updated_result) {
         throw new BadRequestException('Event update failed');
       }
