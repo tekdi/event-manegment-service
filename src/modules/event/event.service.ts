@@ -8,17 +8,35 @@ import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
 import { SearchFilterDto } from './dto/search-event.dto';
 import { EventValidationPipe } from 'src/common/pipes/event-validation.pipe';
+import { AttendeesService } from '../attendees/attendees.service';
+import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
 
 @Injectable()
 export class EventService {
   constructor(
     @InjectRepository(Event)
-    private readonly eventRespository: Repository<Event>
+    private readonly eventRespository: Repository<Event>,
+    private readonly attendeesService: AttendeesService
   ) { }
   async createEvent(createEventDto: CreateEventDto, response: Response): Promise<Response> {
     const apiId = 'api.create.event';
     try {
+      console.log(createEventDto, "createEventDto");
+
       const created = await this.eventRespository.save(createEventDto);
+      console.log(createEventDto.params);
+      console.log(createEventDto, "createEventDto");
+
+
+      // if (created.eventID && createEventDto.isRestricted === true && createEventDto.params.length > 0) {
+      //   const attendeedDto: EventAttendeesDTO = {
+      //     eventId: created.eventID,
+      //     enrolledBy: '',
+      //     status: 'published',
+      //     isAttended: false
+      //   }
+      //   await this.attendeesService.createAttendees(attendeedDto, response)
+      // }
       return response
         .status(HttpStatus.CREATED)
         .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'OK'));

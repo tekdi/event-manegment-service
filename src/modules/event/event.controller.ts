@@ -1,16 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Res, ValidationPipe, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Res, ValidationPipe, BadRequestException, ParseUUIDPipe } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import {
   ApiBadRequestResponse,
-  ApiBasicAuth,
   ApiBody,
   ApiCreatedResponse,
-  ApiHeader,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
-  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -32,6 +29,8 @@ export class EventController {
   @ApiBadRequestResponse({ description: 'Invalid request' })
   @ApiInternalServerErrorResponse({ description: 'Server Error.' })
   async create(@Body() createEventDto: CreateEventDto, @Res() response: Response,) {
+    console.log(createEventDto, "createEventDto");
+
     return this.eventService.createEvent(createEventDto, response);
   }
 
@@ -51,7 +50,7 @@ export class EventController {
     description: 'Get event details by id',
     status: 200
   })
-  findOne(@Param('id') id: string, @Res() response: Response) {
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Res() response: Response) {
     return this.eventService.getEventByID(id, response);
   }
 
@@ -60,7 +59,7 @@ export class EventController {
   @ApiResponse({ status: 200, description: 'Event updated successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @UsePipes(new ValidationPipe({ transform: true }))
-  updateEvent(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto, @Res() response: Response) {
+  updateEvent(@Param('id', ParseUUIDPipe) id: string, @Body() updateEventDto: UpdateEventDto, @Res() response: Response) {
     if (!updateEventDto || Object.keys(updateEventDto).length === 0) {
       throw new BadRequestException('Please do not pass empty body')
     }
@@ -70,7 +69,7 @@ export class EventController {
   @Delete('/:id')
   @ApiResponse({ status: 200, description: 'Event deleted successfully' })
   @ApiResponse({ status: 404, description: 'Event not found' })
-  deleteEvent(@Param('id') id: string, @Res() response: Response) {
+  deleteEvent(@Param('id', ParseUUIDPipe) id: string, @Res() response: Response) {
     return this.eventService.deleteEvent(id, response);
   }
 }
