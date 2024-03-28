@@ -11,7 +11,7 @@ export class AttendeesService {
 
     constructor(
         @InjectRepository(EventAttendees)
-        private readonly eventAttendees: Repository<EventAttendees>
+        private readonly eventAttendeesRepo: Repository<EventAttendees>
     ) { }
 
     async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId?: string, userIds?: string[]): Promise<Response> {
@@ -53,7 +53,38 @@ export class AttendeesService {
         eventAttend.enrolledAt = new Date();
         eventAttend.enrolledBy = eventAttendeesDTO.enrolledBy;
         eventAttend.updatedAt = new Date();
-        const result = await this.eventAttendees.save(eventAttend);
+        const result = await this.eventAttendeesRepo.save(eventAttend);
         return result;
+    }
+    async getAttendees(eventAttendeesId: string, response: Response) {
+        const apiId = 'api.get.AttendeesById';
+        try {
+            const attendees = await this.eventAttendeesRepo.findOne({ where: { eventAttendeesId } });
+            if (!attendees) {
+                return response
+                    .status(HttpStatus.NOT_FOUND)
+                    .send(
+                        APIResponse.error(
+                            apiId,
+                            `No attendees found for: ${eventAttendeesId}`,
+                            'No records found.',
+                            'NOT_FOUND',
+                        ),
+                    );
+            }
+            return response
+                .status(HttpStatus.OK)
+                .send(APIResponse.success(apiId, attendees, 'OK'));
+        }
+        catch (e) {
+            return response
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .send(APIResponse.error(
+                    apiId,
+                    'Something went wrong',
+                    JSON.stringify(e),
+                    'INTERNAL_SERVER_ERROR',
+                ))
+        }
     }
 }

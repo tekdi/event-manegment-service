@@ -28,8 +28,8 @@ export class AttendeesController {
     }
 
     @Get('/:id')
-    findOne(@Param('id') id: string) {
-        return true;
+    findOne(@Param('id', ParseUUIDPipe) id: string, @Res() response: Response) {
+        return this.attendeesService.getAttendees(id, response);
     }
 
     @Patch('/:id')
