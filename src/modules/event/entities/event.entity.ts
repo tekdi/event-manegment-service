@@ -1,7 +1,7 @@
 import { EventAttendees } from 'src/modules/attendees/entity/attendees.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne } from 'typeorm';
 @Entity('Events')
-export class Event {
+export class Events {
     @PrimaryGeneratedColumn('uuid')
     eventID: string;
 
@@ -69,7 +69,7 @@ export class Event {
     @UpdateDateColumn({ type: 'timestamp' })
     updatedAt: Date;
 
-    @ManyToOne(() => EventAttendees, eventAttendees => eventAttendees.events)
-    eventAttendees: EventAttendees;
+    // @ManyToOne(() => EventAttendees, eventAttendees => eventAttendees.event)
+    // eventAttendees: EventAttendees;
 
 }

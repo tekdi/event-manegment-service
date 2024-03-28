@@ -5,7 +5,6 @@ import APIResponse from 'src/common/utils/response';
 import { EventAttendees } from './entity/attendees.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { UUID } from 'crypto';
 
 @Injectable()
 export class AttendeesService {
@@ -18,23 +17,19 @@ export class AttendeesService {
     async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId?: string, userIds?: string[]): Promise<Response> {
         const apiId = 'create.event.attendees';
         try {
-            if (userIds && userIds.length > 0) {
-                for (let i = 0; i < userIds.length; i++) {
-                    // const result = await this.saveattendessRecord(eventAttendeesDTO, userIds[i]);
-                    console.log("yes");
-
-                }
-                return response
-                    .status(HttpStatus.CREATED)
-                    .send(APIResponse.success(apiId, "result", ''))
+            if (userIds && Object.keys(userIds).length > 0) {
+                const cohortIdsValue = userIds['cohortIds']
+                console.log(cohortIdsValue[0]);
+                // for (let i = 0; i < cohortIdsValue.length; i++) {
+                //     // const result = await this.saveattendessRecord(eventAttendeesDTO, cohortIdsValue[i]);
+                //     console.log("yes");
+                // }
             } else {
                 const result = await this.saveattendessRecord(eventAttendeesDTO, userId);
                 return response
                     .status(HttpStatus.CREATED)
-                    .send(APIResponse.success(apiId, result.eventAttendeesId, ''))
+                    .send(APIResponse.success(apiId, result.eventAttendeesId, 'Created'))
             }
-
-
         }
         catch (e) {
             return response
@@ -54,12 +49,11 @@ export class AttendeesService {
         eventAttend.joinedLeftHistory = {};
         eventAttend.duration = 0;
         eventAttend.isAttended = false;
-        eventAttend.status = eventAttendeesDTO.status
+        eventAttend.status = eventAttendeesDTO.status;
         eventAttend.enrolledAt = new Date();
         eventAttend.enrolledBy = eventAttendeesDTO.enrolledBy;
         eventAttend.updatedAt = new Date();
         const result = await this.eventAttendees.save(eventAttend);
         return result;
-
     }
 }

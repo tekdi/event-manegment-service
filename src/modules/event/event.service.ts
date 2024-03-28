@@ -3,7 +3,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Event } from './entities/event.entity';
+import { Events } from './entities/event.entity';
 import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
 import { SearchFilterDto } from './dto/search-event.dto';
@@ -14,29 +14,25 @@ import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
 @Injectable()
 export class EventService {
   constructor(
-    @InjectRepository(Event)
-    private readonly eventRespository: Repository<Event>,
+    @InjectRepository(Events)
+    private readonly eventRespository: Repository<Events>,
     private readonly attendeesService: AttendeesService
   ) { }
   async createEvent(createEventDto: CreateEventDto, response: Response): Promise<Response> {
     const apiId = 'api.create.event';
     try {
-      console.log(createEventDto, "createEventDto");
-
       const created = await this.eventRespository.save(createEventDto);
-      console.log(createEventDto.params);
-      console.log(createEventDto, "createEventDto");
-
-
-      // if (created.eventID && createEventDto.isRestricted === true && createEventDto.params.length > 0) {
-      //   const attendeedDto: EventAttendeesDTO = {
-      //     eventId: created.eventID,
-      //     enrolledBy: '',
-      //     status: 'published',
-      //     isAttended: false
-      //   }
-      //   await this.attendeesService.createAttendees(attendeedDto, response)
-      // }
+      if (created.eventID && createEventDto.isRestricted === true) {
+        const attendeedDto: EventAttendeesDTO = {
+          eventId: created.eventID,
+          enrolledBy: '',
+          status: 'published',
+          isAttended: false
+        }
+        const userId = 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9';
+        const userIds = createEventDto?.params;
+        await this.attendeesService.createAttendees(attendeedDto, response, userId, userIds);
+      }
       return response
         .status(HttpStatus.CREATED)
         .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'OK'));

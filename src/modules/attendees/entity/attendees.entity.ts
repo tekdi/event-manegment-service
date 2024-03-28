@@ -1,6 +1,5 @@
-import { UUID } from 'crypto';
-import { Event } from 'src/modules/event/entities/event.entity';
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Events } from 'src/modules/event/entities/event.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
 
 
 @Entity('EventAttendees')
@@ -39,7 +38,7 @@ export class EventAttendees {
     @Column({ type: 'uuid', nullable: true })
     updatedBy: string;
 
-    @OneToMany(() => Event, event => event.eventAttendees)
-    events: Event[];
+    // @OneToMany(() => Events, event => event.eventAttendees)
+    // event: Events;
 
 }
