@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Res, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Res, UsePipes, ValidationPipe } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { EventAttendeesDTO } from './dto/EventAttendance.dto';
 import { AttendeesService } from './attendees.service';
-import { Response } from 'express';
-import { UUID } from 'crypto';
+import { Response, response } from 'express';
+import { SearchAttendeesDto } from './dto/searchAttendees.dto';
+
 
 @Controller('attendees/v1')
 @ApiTags('Event-Attendance')
@@ -22,14 +23,18 @@ export class AttendeesController {
         return this.attendeesService.createAttendees(eventAttendeesDTO, response, userId);
     }
 
-    @Get()
-    async findAll() {
-        return true;
-    }
-
-    @Get('/:id')
-    findOne(@Param('id', ParseUUIDPipe) id: string, @Res() response: Response) {
-        return this.attendeesService.getAttendees(id, response);
+    @Post()
+    @ApiOkResponse({ description: 'Get attendees Details' })
+    @ApiBadRequestResponse({ description: 'Invalid request' })
+    @ApiBody({ type: SearchAttendeesDto })
+    async searchAttendees(@Body() searchAttendeesDto: SearchAttendeesDto, @Res() response: Response) {
+        if (!searchAttendeesDto || !searchAttendeesDto.eventId && !searchAttendeesDto.userId) {
+            throw new BadRequestException('Please do not pass empty body')
+        }
+        if (searchAttendeesDto.eventId && searchAttendeesDto.userId) {
+            throw new BadRequestException('Please do not pass both in body')
+        }
+        return this.attendeesService.getAttendees(searchAttendeesDto, response)
     }
 
     @Patch('/:id')

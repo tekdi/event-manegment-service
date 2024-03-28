@@ -4,14 +4,17 @@ import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
 import { EventAttendees } from './entity/attendees.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
+import { Events } from '../event/entities/event.entity';
+import { SearchAttendeesDto } from './dto/searchAttendees.dto';
 
 @Injectable()
 export class AttendeesService {
-
     constructor(
         @InjectRepository(EventAttendees)
-        private readonly eventAttendeesRepo: Repository<EventAttendees>
+        private readonly eventAttendeesRepo: Repository<EventAttendees>,
+        @InjectRepository(Events)
+        private readonly eventRespository: Repository<Events>
     ) { }
 
     async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId?: string, userIds?: string[]): Promise<Response> {
@@ -56,25 +59,47 @@ export class AttendeesService {
         const result = await this.eventAttendeesRepo.save(eventAttend);
         return result;
     }
-    async getAttendees(eventAttendeesId: string, response: Response) {
-        const apiId = 'api.get.AttendeesById';
+    async getAttendees(searchAttendeesDto: SearchAttendeesDto, response: Response) {
+        const apiId = 'api.get.Attendees';
         try {
-            const attendees = await this.eventAttendeesRepo.findOne({ where: { eventAttendeesId } });
-            if (!attendees) {
+            if (searchAttendeesDto.userId) {
+                const query = `SELECT * FROM "Users" WHERE "userId"='${searchAttendeesDto.userId}'`;
+                const user = await this.eventAttendeesRepo.query(query);
+                if (user.length === 0) {
+                    return response
+                        .status(HttpStatus.NOT_FOUND)
+                        .send(APIResponse.error(apiId, 'User not found', 'Invalid User.', 'NOT_FOUND'));
+                }
+                const attendees = await this.eventAttendeesRepo.find({ where: { userId: searchAttendeesDto.userId } });
+                if (!attendees || attendees.length === 0) {
+                    return response
+                        .status(HttpStatus.NOT_FOUND)
+                        .send(APIResponse.error(apiId, `No attendees found for this user Id : ${searchAttendeesDto.userId}`, 'No attendees found.', 'NOT_FOUND'));
+                }
                 return response
-                    .status(HttpStatus.NOT_FOUND)
-                    .send(
-                        APIResponse.error(
-                            apiId,
-                            `No attendees found for: ${eventAttendeesId}`,
-                            'No records found.',
-                            'NOT_FOUND',
-                        ),
-                    );
+                    .status(HttpStatus.OK)
+                    .send(APIResponse.success(apiId, { attendees, ...user[0] }, 'OK'));
             }
-            return response
-                .status(HttpStatus.OK)
-                .send(APIResponse.success(apiId, attendees, 'OK'));
+            else if (searchAttendeesDto.eventId) {
+                const eventID = searchAttendeesDto.eventId;
+                const getEventById = await this.eventRespository.findOne({ where: { eventID } });
+                if (!getEventById) {
+                    return response
+                        .status(HttpStatus.NOT_FOUND)
+                        .send(
+                            APIResponse.error(
+                                apiId,
+                                `No event found for: ${eventID}`,
+                                'No records found.',
+                                'NOT_FOUND',
+                            ),
+                        );
+                }
+                const attendees = await this.eventAttendeesRepo.find({ where: { eventId: eventID } });
+                return response
+                    .status(HttpStatus.OK)
+                    .send(APIResponse.success(apiId, attendees, 'OK'));
+            }
         }
         catch (e) {
             return response

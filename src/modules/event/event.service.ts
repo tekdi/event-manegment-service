@@ -119,10 +119,6 @@ export class EventService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} event`;
-  }
-
   async updateEvent(eventID: string, updateEventDto: UpdateEventDto, response: Response) {
     const apiId = 'api.update.event';
     try {
