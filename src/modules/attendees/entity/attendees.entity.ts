@@ -1,5 +1,5 @@
 import { Events } from 'src/modules/event/entities/event.entity';
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 
 
 @Entity('EventAttendees')
@@ -38,7 +38,8 @@ export class EventAttendees {
     @Column({ type: 'uuid', nullable: true })
     updatedBy: string;
 
-    // @OneToMany(() => Events, event => event.eventAttendees)
-    // event: Events;
+    @ManyToOne(() => Events, event => event.eventAttendees)
+    @JoinColumn({ name: 'eventId' })
+    event: Events;
 
 }
