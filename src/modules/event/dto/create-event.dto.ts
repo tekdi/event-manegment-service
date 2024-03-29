@@ -137,7 +137,7 @@ export class CreateEventDto {
   @ApiProperty({
     type: Object,
     description: 'Params',
-    example: { key: 'value' }
+    example: { cohortIds: ['e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9', 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'] },
   })
   @IsObject()
   params: any;
@@ -165,7 +165,7 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'Created By',
-    example: 'John Doe'
+    example: 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'
   })
   @IsString()
   @IsNotEmpty()
@@ -174,7 +174,7 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'updated By',
-    example: 'John Doe'
+    example: 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'
   })
   @IsString()
   @IsNotEmpty()
