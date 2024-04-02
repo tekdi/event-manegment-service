@@ -10,32 +10,43 @@ import { SearchFilterDto } from './dto/search-event.dto';
 import { EventValidationPipe } from 'src/common/pipes/event-validation.pipe';
 import { AttendeesService } from '../attendees/attendees.service';
 import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
+import { CohortMember } from './entities/CohortMembers.entity';
+import { Cohort } from './entities/Cohort.entity';
+import { Users } from './entities/Users.entity';
 
 @Injectable()
 export class EventService {
   constructor(
     @InjectRepository(Events)
     private readonly eventRespository: Repository<Events>,
+    @InjectRepository(CohortMember)
+    private readonly cohortMemberRepo: Repository<CohortMember>,
+    @InjectRepository(Cohort)
+    private readonly cohortRepo: Repository<Cohort>,
+    @InjectRepository(Users)
+    private readonly usersRepo: Repository<Users>,
     private readonly attendeesService: AttendeesService
   ) { }
-  async createEvent(createEventDto: CreateEventDto, response: Response): Promise<Response> {
+  async createEvent(createEventDto: CreateEventDto, userId: string, response: Response): Promise<Response> {
     const apiId = 'api.create.event';
     try {
-      const created = await this.eventRespository.save(createEventDto);
-      if (created.eventID && createEventDto.isRestricted === true) {
-        const attendeedDto: EventAttendeesDTO = {
-          eventId: created.eventID,
-          enrolledBy: '',
-          status: 'published',
-          isAttended: false
+      // checkl if isRistricted true then check cohorts id or user id present in db or not
+      if (createEventDto.isRestricted === true) {
+        if (createEventDto.params.userIds) {
+          await this.validateUserIds(createEventDto.params.userIds);
         }
-        const userId = 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9';
-        const userIds = createEventDto?.params;
-        await this.attendeesService.createAttendees(attendeedDto, response, userId, userIds);
+        else if (createEventDto.params.cohortIds) {
+          await this.validateCohortIds(createEventDto.params.cohortIds)
+        }
+      }
+      const created = await this.eventRespository.save(createEventDto);
+      // Create attendees if isRsetricted true 
+      if (created.eventID && createEventDto.isRestricted === true) {
+        await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response)
       }
       return response
         .status(HttpStatus.CREATED)
-        .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'OK'));
+        .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'CREATED'));
     }
     catch (e) {
       return response
@@ -229,4 +240,58 @@ export class EventService {
     }
     return finalquery;
   }
+
+  // check userids present in user table or not
+  async validateUserIds(userIds: string[]) {
+    const queryBuilder = this.usersRepo.createQueryBuilder('Users')
+      .select('Users.userId', 'userId')
+      .where('Users.userId IN (:...userIds)', { userIds });
+    const users = await queryBuilder.getRawMany();
+    const existingUserIds = users.map(user => user.userId);
+    const missingUserIds = userIds.filter(userId => !existingUserIds.includes(userId));
+    if (missingUserIds.length > 0) {
+      throw new BadRequestException(`The following user IDs are not present: ${missingUserIds.join(', ')}`);
+    }
+  }
+
+  // check cohortids present in cohort table or not
+  async validateCohortIds(cohortIds: string[]) {
+    const queryBuilder = this.cohortRepo.createQueryBuilder('Cohort')
+      .select('Cohort.cohortId', 'cohortId')
+      .where('Cohort.cohortId IN (:...cohortIds)', { cohortIds });
+    const cohorts = await queryBuilder.getRawMany();
+    const existingCohortIds = cohorts.map(cohort => cohort.cohortId);
+    const missingCohortIds = cohortIds.filter(cohortId => !existingCohortIds.includes(cohortId));
+    if (missingCohortIds.length > 0) {
+      throw new BadRequestException(`The following cohort IDs are not present: ${missingCohortIds.join(', ')}`);
+    }
+  }
+
+  async CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response) {
+    const attendeedDto: EventAttendeesDTO = {
+      eventId: created.eventID,
+      enrolledBy: userId,
+      status: 'published'
+    }
+    const cohortsIdsOruserIds = createEventDto?.params; //{ cohortIds: [ 'eff008a8-2573-466d-b877-fddf6a4fc13e' ] }
+    const cohortIds = cohortsIdsOruserIds.cohortIds || [];
+    const userIds = cohortsIdsOruserIds.userIds || [];
+    if (cohortIds?.length > 0) {
+      const userIds: string[] = [];
+      const queryBuilder = this.cohortMemberRepo.createQueryBuilder('CohortMembers')
+        .select('CohortMembers.userId', 'userId')
+        .where('CohortMembers.cohortId IN (:...cohortIds)', { cohortIds });
+      const cohortMembers = await queryBuilder.getRawMany();
+      for (const member of cohortMembers) {
+        userIds.push(member.userId);
+      }
+      if (userIds.length > 0) {
+        await this.attendeesService.createAttendees(attendeedDto, response, userId, userIds);
+      }
+    }
+    else if (userIds?.length > 0) {
+      await this.attendeesService.createAttendees(attendeedDto, response, userId, userIds);
+    }
+  }
+
 }

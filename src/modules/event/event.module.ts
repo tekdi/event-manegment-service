@@ -8,13 +8,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Events } from './entities/event.entity';
 import { AttendeesService } from '../attendees/attendees.service';
 import { EventAttendees } from '../attendees/entity/attendees.entity';
+import { CohortMember } from './entities/CohortMembers.entity';
+import { Cohort } from './entities/Cohort.entity';
+import { Users } from './entities/Users.entity';
 
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Events,
-      EventAttendees
+      CohortMember,
+      EventAttendees,
+      Cohort,
+      Users
     ])
   ],
   controllers: [EventController],

@@ -29,13 +29,13 @@ export class EventController {
   @ApiBadRequestResponse({ description: 'Invalid request' })
   @ApiInternalServerErrorResponse({ description: 'Server Error.' })
   async create(@Body() createEventDto: CreateEventDto, @Res() response: Response,) {
-    console.log(createEventDto, "createEventDto");
-
-    return this.eventService.createEvent(createEventDto, response);
+    const userId = '016badad-22b0-4566-88e9-aab1b35b1dfc'; // later come from JWT-token
+    return this.eventService.createEvent(createEventDto, userId, response);
   }
 
   @Post('/list')
   @ApiBody({ type: SearchFilterDto })
+  @ApiInternalServerErrorResponse({ description: 'Server Error.' })
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiOkResponse({
     description: 'Searched',
@@ -50,6 +50,7 @@ export class EventController {
     description: 'Get event details by id',
     status: 200
   })
+  @ApiInternalServerErrorResponse({ description: 'Server Error.' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @Res() response: Response) {
     return this.eventService.getEventByID(id, response);
   }
@@ -57,7 +58,7 @@ export class EventController {
   @Patch('/:id')
   @ApiBody({ type: UpdateEventDto })
   @ApiResponse({ status: 200, description: 'Event updated successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiInternalServerErrorResponse({ description: 'Server Error.' })
   @UsePipes(new ValidationPipe({ transform: true }))
   updateEvent(@Param('id', ParseUUIDPipe) id: string, @Body() updateEventDto: UpdateEventDto, @Res() response: Response) {
     if (!updateEventDto || Object.keys(updateEventDto).length === 0) {
