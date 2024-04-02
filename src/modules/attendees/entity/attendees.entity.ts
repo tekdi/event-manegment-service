@@ -1,6 +1,6 @@
+import { Users } from 'src/modules/event/entities/Users.entity';
 import { Events } from 'src/modules/event/entities/event.entity';
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, JoinColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('EventAttendees')
 export class EventAttendees {
@@ -17,7 +17,7 @@ export class EventAttendees {
     @Column({ nullable: true, default: null })
     isAttended: boolean | null;
 
-    @Column({ type: 'json', nullable: true })
+    @Column({ type: 'jsonb', nullable: true })
     joinedLeftHistory: any;
 
     @Column({ nullable: false, default: 0 })
@@ -26,13 +26,13 @@ export class EventAttendees {
     @Column()
     status: string;
 
-    @Column({ type: 'timestamp' })
+    @CreateDateColumn({ type: 'timestamp' })
     enrolledAt: Date;
 
     @Column({ type: 'uuid', nullable: true })
     enrolledBy: string;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @UpdateDateColumn({ type: 'timestamp' })
     updatedAt: Date;
 
     @Column({ type: 'uuid', nullable: true })
@@ -41,5 +41,9 @@ export class EventAttendees {
     @ManyToOne(() => Events, event => event.eventAttendees)
     @JoinColumn({ name: 'eventId' })
     event: Events;
+
+    @ManyToOne(() => Users, user => user.eventAttendees)
+    @JoinColumn({ name: 'userId' })
+    user: Users;
 
 }

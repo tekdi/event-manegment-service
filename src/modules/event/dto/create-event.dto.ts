@@ -137,7 +137,9 @@ export class CreateEventDto {
   @ApiProperty({
     type: Object,
     description: 'Params',
-    example: { cohortIds: ['e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9', 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'] },
+    // example: { cohortIds: ['eff008a8-2573-466d-b877-fddf6a4fc13e', 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'] },
+    // example: { userIds: ['eff008a8-2573-466d-b877-fddf6a4fc13e', 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'] },
+    example: { cohortIds: ['eff008a8-2573-466d-b877-fddf6a4fc13e'] },
   })
   @IsObject()
   params: any;

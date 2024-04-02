@@ -15,7 +15,7 @@ export class EventAttendeesDTO {
 
     @ApiProperty({
         description: '',
-        example: 'cfee3e0e-350b-4709-83fb-07f71cd0aff8'
+        example: 'bfec8878-623d-40ff-90aa-9bcaf6a73602'
     })
     @IsUUID()
     eventId: string;
@@ -34,14 +34,9 @@ export class EventAttendeesDTO {
     @IsString()
     status: string;
 
-    @ApiProperty({
-        description: '',
-        example: 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'
-    })
-    @IsUUID()
-    enrolledBy?: string;
 
+    @IsUUID()
     @IsOptional()
-    isAttended: boolean | null; // Allows boolean values or null
+    enrolledBy?: string;
 
 }

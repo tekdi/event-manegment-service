@@ -195,5 +195,8 @@ export class UpdateEventDto {
     @IsNotEmpty()
     updatedBy: string;
 
+    @IsOptional()
+    updateAt: Date;
+
 }
 
