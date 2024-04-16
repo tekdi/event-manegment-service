@@ -164,22 +164,8 @@ export class CreateEventDto {
   @IsNotEmpty()
   status: string;
 
-  @ApiProperty({
-    type: String,
-    description: 'Created By',
-    example: 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'
-  })
-  @IsString()
-  @IsNotEmpty()
   createdBy: string;
 
-  @ApiProperty({
-    type: String,
-    description: 'updated By',
-    example: 'e9fec05a-d6ab-44be-bfa4-eaeef2ef8fe9'
-  })
-  @IsString()
-  @IsNotEmpty()
   updatedBy: string;
 
 }

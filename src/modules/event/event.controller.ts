@@ -64,7 +64,8 @@ export class EventController {
     if (!updateEventDto || Object.keys(updateEventDto).length === 0) {
       throw new BadRequestException('Please do not pass empty body')
     }
-    return this.eventService.updateEvent(id, updateEventDto, response);
+    const userId = '01455719-e84f-4bc8-8efa-7024874ade08'; // later come from JWT-token
+    return this.eventService.updateEvent(id, updateEventDto, userId, response);
   }
 
   @Delete('/:id')

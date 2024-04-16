@@ -39,6 +39,8 @@ export class EventService {
           await this.validateCohortIds(createEventDto.params.cohortIds)
         }
       }
+      createEventDto.createdBy = userId;
+      createEventDto.updatedBy = userId
       const created = await this.eventRespository.save(createEventDto);
       // Create attendees if isRsetricted true 
       if (created.eventID && createEventDto.isRestricted === true) {
@@ -130,7 +132,7 @@ export class EventService {
     }
   }
 
-  async updateEvent(eventID: string, updateEventDto: UpdateEventDto, response: Response) {
+  async updateEvent(eventID: string, updateEventDto: UpdateEventDto, userId: string, response: Response) {
     const apiId = 'api.update.event';
     try {
       const event = await this.eventRespository.findOne({ where: { eventID } })
@@ -144,8 +146,42 @@ export class EventService {
           ),
         );
       }
+
+      // convert public event into private event
+      if (updateEventDto.isRestricted == true && event.isRestricted == false) {
+        if (event.status == 'draft') {
+          if (updateEventDto.params && Object.keys(updateEventDto.params.length > 0)) {
+            if (updateEventDto.params.userIds) {
+              await this.validateUserIds(updateEventDto.params.userIds);
+            }
+            else if (updateEventDto.params.cohortIds) {
+              await this.validateCohortIds(updateEventDto.params.cohortIds)
+            }
+            await this.CreateAttendeedforRestrictedEvent(updateEventDto, event, userId, response)
+          }
+        }
+        else {
+          throw new BadRequestException('You can not update event beacuse event is live');
+        }
+      }
+      if (updateEventDto.isRestricted == true && event.isRestricted == true) {
+        throw new BadRequestException('You can not update event');
+      }
+
+      // Convert private event to public 
+      if (updateEventDto.isRestricted == false && event.isRestricted == true) {
+        if (event.status == 'draft') {
+          // need to delete entry from attendees table for this event ids
+          event.params = {};
+        }
+        else {
+          throw new BadRequestException('You can not update event beacuse event is live');
+        }
+      }
+
       Object.assign(event, updateEventDto);
       new EventValidationPipe().transform(event);
+      event.updatedBy = userId;
       const updated_result = await this.eventRespository.save(event);
       if (!updated_result) {
         throw new BadRequestException('Event update failed');
