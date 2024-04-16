@@ -13,7 +13,6 @@ import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
 import { CohortMember } from './entities/CohortMembers.entity';
 import { Cohort } from './entities/Cohort.entity';
 import { Users } from './entities/Users.entity';
-
 @Injectable()
 export class EventService {
   constructor(
@@ -171,7 +170,7 @@ export class EventService {
       // Convert private event to public 
       if (updateEventDto.isRestricted == false && event.isRestricted == true) {
         if (event.status == 'draft') {
-          // need to delete entry from attendees table for this event ids
+          const result = await this.attendeesService.deleteEventAttendees(event.eventID)
           event.params = {};
         }
         else {

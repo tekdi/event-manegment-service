@@ -127,25 +127,25 @@ export class AttendeesService {
         const { userId, eventId } = searchAttendeesDto
         try {
             if (eventId && !userId) {
-                await this.deleteEventAttendees(eventId);
+                const deleteAttendees = await this.deleteEventAttendees(eventId);
                 return response
                     .status(HttpStatus.OK)
                     .send(
                         APIResponse.success(
                             apiId,
-                            { status: `Event Attendees for event ID ${eventId} deleted successfully.` },
+                            { status: `Event Attendees for event ID ${eventId} deleted successfully.${deleteAttendees.affected} rows affected` },
                             'OK',
                         ),
                     );
             }
             else if (userId && !eventId) {
-                await this.deleteUserAttendees(userId);
+                const deleteAttendees = await this.deleteUserAttendees(userId);
                 return response
                     .status(HttpStatus.OK)
                     .send(
                         APIResponse.success(
                             apiId,
-                            { status: `Event Attendees for user ID ${userId} deleted successfully.` },
+                            { status: `Event Attendees for user ID ${userId} deleted successfully.${deleteAttendees.affected} rows affected` },
                             'OK',
                         ),
                     );
@@ -178,29 +178,34 @@ export class AttendeesService {
         }
     }
 
-    private async deleteEventAttendees(eventId: string) {
-        const deletedAttendees = await this.eventAttendeesRepo
-            .createQueryBuilder()
-            .delete()
-            .from(EventAttendees)
-            .where('"eventId" = :eventId', { eventId })
-            .execute();
-        if (deletedAttendees.affected === 0) {
-            throw new BadRequestException('Event not deleted');
+    public async deleteEventAttendees(eventId: string) {
+        try {
+            const deletedAttendees = await this.eventAttendeesRepo
+                .createQueryBuilder()
+                .delete()
+                .from(EventAttendees)
+                .where('"eventId" = :eventId', { eventId })
+                .execute();
+            return deletedAttendees;
+        }
+        catch (e) {
+            throw new BadRequestException('Event not deleted', e);
         }
     }
 
-    private async deleteUserAttendees(userId: string) {
-        const deletedAttendees = await this.eventAttendeesRepo
-            .createQueryBuilder()
-            .delete()
-            .from(EventAttendees)
-            .where('"userId" = :userId', { userId })
-            .execute();
-        if (deletedAttendees.affected === 0) {
-            throw new BadRequestException('User not deleted');
+    public async deleteUserAttendees(userId: string) {
+        try {
+            const deletedAttendees = await this.eventAttendeesRepo
+                .createQueryBuilder()
+                .delete()
+                .from(EventAttendees)
+                .where('"userId" = :userId', { userId })
+                .execute();
+            return deletedAttendees;
         }
-
+        catch (e) {
+            throw new BadRequestException('users not deleted', e);
+        }
     }
 
     async updateAttendees(updateAttendeesDto: UpdateAttendeesDto, response: Response) {
