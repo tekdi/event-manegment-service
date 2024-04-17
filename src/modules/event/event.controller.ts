@@ -13,7 +13,7 @@ import {
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { SearchFilterDto } from './dto/search-event.dto';
-import { EventValidationPipe } from 'src/common/pipes/event-validation.pipe';
+import { DateValidationPipe, DeadlineValidationPipe, ParamsValidationPipe } from 'src/common/pipes/event-validation.pipe';
 
 @Controller('event/v1')
 @ApiTags('Create Event')
@@ -22,7 +22,7 @@ export class EventController {
 
   @Post('/create')
   @ApiBody({ type: CreateEventDto })
-  @UsePipes(new EventValidationPipe(), new ValidationPipe({ transform: true }))
+  @UsePipes(new DateValidationPipe, new DeadlineValidationPipe, new ParamsValidationPipe, new ValidationPipe({ transform: true }))
   @ApiCreatedResponse({
     description: 'Created Event',
   })

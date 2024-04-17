@@ -7,7 +7,7 @@ import { Events } from './entities/event.entity';
 import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
 import { SearchFilterDto } from './dto/search-event.dto';
-import { EventValidationPipe } from 'src/common/pipes/event-validation.pipe';
+import { DateValidationPipe, DeadlineValidationPipe, ParamsValidationPipe } from 'src/common/pipes/event-validation.pipe';
 import { AttendeesService } from '../attendees/attendees.service';
 import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
 import { CohortMember } from './entities/CohortMembers.entity';
@@ -146,7 +146,7 @@ export class EventService {
         );
       }
 
-      // convert public event into private event
+      // convert public event into private event if status is draft
       if (updateEventDto.isRestricted == true && event.isRestricted == false) {
         if (event.status == 'draft') {
           if (updateEventDto.params && Object.keys(updateEventDto.params.length > 0)) {
@@ -160,26 +160,37 @@ export class EventService {
           }
         }
         else {
-          throw new BadRequestException('You can not update event beacuse event is live');
+          throw new BadRequestException('You can not update public into private event beacuse event is live');
         }
       }
+      // You can update private event again private 
       if (updateEventDto.isRestricted == true && event.isRestricted == true) {
         throw new BadRequestException('You can not update event');
       }
 
-      // Convert private event to public 
+      // Convert private event to public if status is draft
       if (updateEventDto.isRestricted == false && event.isRestricted == true) {
         if (event.status == 'draft') {
           const result = await this.attendeesService.deleteEventAttendees(event.eventID)
           event.params = {};
         }
         else {
-          throw new BadRequestException('You can not update event beacuse event is live');
+          throw new BadRequestException('You can not update private into public event beacuse event is live');
         }
       }
-
       Object.assign(event, updateEventDto);
-      new EventValidationPipe().transform(event);
+      if (updateEventDto.startDatetime && updateEventDto.endDatetime || updateEventDto.startDatetime) {
+        new DateValidationPipe().transform(event);
+      }
+      if (updateEventDto.endDatetime) {
+        const startDate = new Date(event.startDatetime);
+        const endDate = new Date(updateEventDto.endDatetime);
+        if (startDate > endDate) {
+          throw new BadRequestException('End date should be greater than or equal to start date')
+        }
+      }
+      new DeadlineValidationPipe().transform(event);
+      new ParamsValidationPipe().transform(event);
       event.updatedBy = userId;
       const updated_result = await this.eventRespository.save(event);
       if (!updated_result) {
