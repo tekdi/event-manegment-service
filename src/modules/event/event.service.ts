@@ -44,7 +44,7 @@ export class EventService {
         createEventDto.autoEnroll = true;
       }
       const created = await this.eventRespository.save(createEventDto);
-      // Create attendees if isRsetricted true 
+      // Create attendees if isRsetricted true and event status is live
       if (created.eventID && createEventDto.isRestricted === true && createEventDto.status == 'live') {
         await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response)
       }
@@ -181,6 +181,7 @@ export class EventService {
         }
       }
 
+      //if event created as draft and private and now event become live then automatic entry will go in attenddes table of private atendees
       if (event.status == 'draft' && updateEventDto.status == 'live' && event.isRestricted == true) {
         if (event.params && Object.keys(event.params.length > 0)) {
           if (event.params.userIds) {
@@ -192,9 +193,12 @@ export class EventService {
         }
       }
       Object.assign(event, updateEventDto);
+
+      //validation pipe for check start date and end date  or only start date
       if (updateEventDto.startDatetime && updateEventDto.endDatetime || updateEventDto.startDatetime) {
         new DateValidationPipe().transform(event);
       }
+      //validation pipe for if user want to change only end date
       if (updateEventDto.endDatetime) {
         const startDate = new Date(event.startDatetime);
         const endDate = new Date(updateEventDto.endDatetime);
@@ -202,7 +206,9 @@ export class EventService {
           throw new BadRequestException('End date should be greater than or equal to start date')
         }
       }
+      //validation pipe for registration deadline date
       new DeadlineValidationPipe().transform(event);
+      // validation pipe for empty param object
       new ParamsValidationPipe().transform(event);
       event.updatedBy = userId;
       const updated_result = await this.eventRespository.save(event);
