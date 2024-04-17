@@ -39,10 +39,13 @@ export class EventService {
         }
       }
       createEventDto.createdBy = userId;
-      createEventDto.updatedBy = userId
+      createEventDto.updatedBy = userId;
+      if (createEventDto.isRestricted === true) {
+        createEventDto.autoEnroll = true;
+      }
       const created = await this.eventRespository.save(createEventDto);
       // Create attendees if isRsetricted true 
-      if (created.eventID && createEventDto.isRestricted === true) {
+      if (created.eventID && createEventDto.isRestricted === true && createEventDto.status == 'live') {
         await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response)
       }
       return response
@@ -165,17 +168,27 @@ export class EventService {
       }
       // You can update private event again private 
       if (updateEventDto.isRestricted == true && event.isRestricted == true) {
-        throw new BadRequestException('You can not update event');
+        throw new BadRequestException('You can not update private event as private');
       }
 
       // Convert private event to public if status is draft
       if (updateEventDto.isRestricted == false && event.isRestricted == true) {
         if (event.status == 'draft') {
-          const result = await this.attendeesService.deleteEventAttendees(event.eventID)
           event.params = {};
         }
         else {
           throw new BadRequestException('You can not update private into public event beacuse event is live');
+        }
+      }
+
+      if (event.status == 'draft' && updateEventDto.status == 'live' && event.isRestricted == true) {
+        if (event.params && Object.keys(event.params.length > 0)) {
+          if (event.params.userIds) {
+            await this.CreateAttendeedforRestrictedEvent(event, event, userId, response)
+          }
+          else if (event.params.cohortIds) {
+            await this.CreateAttendeedforRestrictedEvent(event, event, userId, response)
+          }
         }
       }
       Object.assign(event, updateEventDto);
