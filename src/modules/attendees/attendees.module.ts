@@ -9,6 +9,7 @@ import { Events } from '../event/entities/event.entity';
 import { CohortMember } from '../event/entities/CohortMembers.entity';
 import { Cohort } from '../event/entities/Cohort.entity';
 import { Users } from '../event/entities/Users.entity';
+import { LoggerService } from 'src/common/logger/logger.service';
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { Users } from '../event/entities/Users.entity';
     ])
   ],
   controllers: [AttendeesController],
-  providers: [AttendeesService, ConfigService, EventService]
+  providers: [AttendeesService, ConfigService, EventService, LoggerService]
 })
 export class AttendeesModule { }
