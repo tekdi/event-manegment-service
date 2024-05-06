@@ -13,6 +13,7 @@ import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
 import { CohortMember } from './entities/CohortMembers.entity';
 import { Cohort } from './entities/Cohort.entity';
 import { Users } from './entities/Users.entity';
+import { LoggerService } from 'src/common/logger/logger.service';
 
 @Injectable()
 export class EventService {
@@ -25,7 +26,8 @@ export class EventService {
     private readonly cohortRepo: Repository<Cohort>,
     @InjectRepository(Users)
     private readonly usersRepo: Repository<Users>,
-    private readonly attendeesService: AttendeesService
+    private readonly attendeesService: AttendeesService,
+    private readonly logger: LoggerService
   ) { }
   async createEvent(createEventDto: CreateEventDto, userId: string, response: Response): Promise<Response> {
     const apiId = 'api.create.event';
@@ -44,11 +46,17 @@ export class EventService {
       if (created.eventID && createEventDto.isRestricted === true) {
         await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response)
       }
+      this.logger.log(apiId, 'Event created successfully', `eventID: ${created.eventID}`)
       return response
         .status(HttpStatus.CREATED)
         .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'CREATED'));
     }
     catch (e) {
+      this.logger.error(
+        apiId,
+        e,
+        '/Failed',
+      );
       return response
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .send(APIResponse.error(
@@ -70,6 +78,10 @@ export class EventService {
       }
       const result = await this.eventRespository.query(finalquery);
       if (result.length === 0) {
+        this.logger.error(
+          '/Post event details',
+          'No event details found for this event.',
+        )
         return response
           .status(HttpStatus.NOT_FOUND)
           .send(
@@ -81,11 +93,14 @@ export class EventService {
             ),
           );
       }
+      this.logger.log(apiId, 'Event details fetched succcessfully')
+
       return response
         .status(HttpStatus.OK)
         .send(APIResponse.success(apiId, result, "OK"));
     }
     catch (e) {
+      this.logger.error(apiId, e, '/Failed');
       return response
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .send(APIResponse.error(
@@ -102,6 +117,12 @@ export class EventService {
     try {
       const getEventById = await this.eventRespository.findOne({ where: { eventID } });
       if (!getEventById) {
+
+        this.logger.error(
+          '/Get event details by id',
+          'No event details found for this event id.',
+          `Event Id: ${eventID}`
+        )
         return response
           .status(HttpStatus.NOT_FOUND)
           .send(
@@ -113,12 +134,15 @@ export class EventService {
             ),
           );
       }
+
+      this.logger.log(apiId, 'Event details fetched succcessfully')
       return response
         .status(HttpStatus.OK)
         .send(APIResponse.success(apiId, getEventById, 'OK'))
 
     }
     catch (e) {
+      this.logger.error(apiId, e, '/Failed');
       return response
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .send(APIResponse.error(
@@ -135,6 +159,12 @@ export class EventService {
     try {
       const event = await this.eventRespository.findOne({ where: { eventID } })
       if (!event) {
+
+        this.logger.error(
+          '/Patch event details by id',
+          'No event details found for this event id.',
+          `Event Id: ${eventID}`
+        )
         return response.status(HttpStatus.NOT_FOUND).send(
           APIResponse.error(
             apiId,
@@ -150,11 +180,13 @@ export class EventService {
       if (!updated_result) {
         throw new BadRequestException('Event update failed');
       }
+      this.logger.log(apiId, 'Updated successfully')
       return response
         .status(HttpStatus.CREATED)
         .send(APIResponse.success(apiId, { id: eventID, status: 'updated Successfully' }, 'OK'))
     }
     catch (e) {
+      this.logger.error(apiId, e, '/Failed');
       return response
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .send(APIResponse.error(
@@ -171,6 +203,11 @@ export class EventService {
     try {
       const event_id = await this.eventRespository.findOne({ where: { eventID } })
       if (!event_id) {
+        this.logger.error(
+          '/Delete event details by id',
+          'No event details found for this event id.',
+          `Event Id: ${eventID}`
+        )
         return response.status(HttpStatus.NOT_FOUND).send(
           APIResponse.error(
             apiId,
@@ -184,6 +221,8 @@ export class EventService {
       if (deletedEvent.affected !== 1) {
         throw new BadRequestException('Event not deleted');
       }
+      this.logger.log(apiId, 'Event deleted successfully.', `Event ID: ${eventID}`)
+
       return response
         .status(HttpStatus.OK)
         .send(
@@ -195,6 +234,7 @@ export class EventService {
         );
     }
     catch (e) {
+      this.logger.error(apiId, e, '/Failed');
       return response
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .send(APIResponse.error(

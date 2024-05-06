@@ -7,12 +7,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SearchAttendeesDto } from './dto/searchAttendees.dto';
 import { UpdateAttendeesDto } from './dto/updateAttendees.dto';
+import { LoggerService } from 'src/common/logger/logger.service';
+
 
 @Injectable()
 export class AttendeesService {
     constructor(
         @InjectRepository(EventAttendees)
-        private readonly eventAttendeesRepo: Repository<EventAttendees>
+        private readonly eventAttendeesRepo: Repository<EventAttendees>,
+        private readonly logger: LoggerService
     ) { }
 
     async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId: string, userIds?: string[]): Promise<Response> {
@@ -27,12 +30,15 @@ export class AttendeesService {
                 }
                 const userIdArray = [userId];
                 const result = await this.saveattendessRecord(eventAttendeesDTO, userIdArray);
+
+                this.logger.log(apiId, 'Attendees successfully registered')
                 return response
                     .status(HttpStatus.CREATED)
                     .send(APIResponse.success(apiId, { attendeesId: result[0]?.eventAttendeesId }, 'Created'))
             }
         }
         catch (e) {
+            this.logger.error(apiId,e,'/Failed');
             return response
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .send(APIResponse.error(
@@ -66,8 +72,14 @@ export class AttendeesService {
             if (userId && eventId) {
                 const attendees = await this.eventAttendeesRepo.find({ where: { userId, eventId } });
                 if (!attendees || attendees.length === 0) {
+                    this.logger.error(
+                        '/Get attendees details by id',
+                        'No Attendees details found.',
+                      )
                     return response.status(HttpStatus.NOT_FOUND).send(APIResponse.error(apiId, `User : ${userId}: not regitered for this event : ${eventId} `, 'No attendees found.', 'NOT_FOUND'));
                 }
+                
+                this.logger.log(apiId, 'Attendees successfully registered')
                 return response
                     .status(HttpStatus.OK)
                     .send(APIResponse.success(apiId, attendees, 'OK'));
@@ -76,16 +88,27 @@ export class AttendeesService {
                 const query = `SELECT * FROM "Users" WHERE "userId"='${userId}'`;
                 const user = await this.eventAttendeesRepo.query(query);
                 if (user.length === 0) {
+                    this.logger.error(
+                        '/Get attendees details by user id',
+                        'User not found', 'User Not Exist.',
+                        `userId: ${userId}`
+                      )
                     return response
                         .status(HttpStatus.NOT_FOUND)
                         .send(APIResponse.error(apiId, 'User not found', 'User Not Exist.', 'NOT_FOUND'));
                 }
                 const attendees = await this.eventAttendeesRepo.find({ where: { userId: userId } });
                 if (!attendees || attendees.length === 0) {
+                    this.logger.error(
+                        '/Get attendees details by user id',
+                        'No attendees found for this user Id.',
+                        `userId: ${userId}`
+                      )
                     return response
                         .status(HttpStatus.NOT_FOUND)
                         .send(APIResponse.error(apiId, `No attendees found for this user Id : ${userId}`, 'No attendees found.', 'NOT_FOUND'));
                 }
+                this.logger.log(apiId, 'Attendees successfully registered')
                 return response
                     .status(HttpStatus.OK)
                     .send(APIResponse.success(apiId, { attendees, ...user[0] }, 'OK'));
@@ -94,6 +117,11 @@ export class AttendeesService {
                 const eventID = eventId;
                 const attendees = await this.eventAttendeesRepo.find({ where: { eventId: eventID } });
                 if (!attendees || attendees.length === 0) {
+                    this.logger.error(
+                        '/Get attendees details by event id',
+                        'No attendees found for this event Id.',
+                        `eventId: ${eventId}`
+                      )
                     return response
                         .status(HttpStatus.NOT_FOUND)
                         .send(
@@ -105,12 +133,14 @@ export class AttendeesService {
                             ),
                         );
                 }
+                this.logger.log(apiId, 'Attendees successfully registered')
                 return response
                     .status(HttpStatus.OK)
                     .send(APIResponse.success(apiId, attendees, 'OK'));
             }
         }
         catch (e) {
+            this.logger.error(apiId,e,'/Failed');
             return response
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .send(APIResponse.error(
@@ -128,6 +158,11 @@ export class AttendeesService {
         try {
             if (eventId && !userId) {
                 await this.deleteEventAttendees(eventId);
+                this.logger.error(
+                    '/Delete attendees details by event id',
+                    'Event Attendees deleted successfully.',
+                    `Event Id: ${eventId}`
+                  )
                 return response
                     .status(HttpStatus.OK)
                     .send(
@@ -140,6 +175,11 @@ export class AttendeesService {
             }
             else if (userId && !eventId) {
                 await this.deleteUserAttendees(userId);
+                this.logger.error(
+                    '/Delete attendees details by user id',
+                    'Event Attendees deleted successfully.',
+                    `User Id: ${userId}`
+                  )
                 return response
                     .status(HttpStatus.OK)
                     .send(
@@ -155,6 +195,11 @@ export class AttendeesService {
                 if (deletedAttendees.affected != 1) {
                     throw new BadRequestException('Not deleted');
                 }
+                this.logger.error(
+                    '/Delete attendees details by id',
+                    'Event Attendees for user and eventId deleted successfully.',
+                    `User Id: ${userId} & Event Id: ${eventId}`
+                  )
                 return response
                     .status(HttpStatus.OK)
                     .send(
@@ -167,6 +212,7 @@ export class AttendeesService {
             }
         }
         catch (e) {
+            this.logger.error(apiId,e,'/Failed');
             return response
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .send(APIResponse.error(
@@ -208,6 +254,12 @@ export class AttendeesService {
         try {
             const attendees = await this.eventAttendeesRepo.findOne({ where: { eventId: updateAttendeesDto.eventId, userId: updateAttendeesDto.userId } })
             if (!attendees) {
+                this.logger.error(
+                    '/Patch event details by id',
+                    'No record found for this event id & user id.',
+                    `Event Id: ${updateAttendeesDto.eventId} & User Id: ${updateAttendeesDto.userId}`
+                  )
+
                 return response.status(HttpStatus.NOT_FOUND).send(
                     APIResponse.error(
                         apiId,
@@ -225,11 +277,14 @@ export class AttendeesService {
             if (!updated_result) {
                 throw new BadRequestException('Attendees updation failed');
             }
+
+            this.logger.log(apiId, 'Attendees updated successfully')
             return response
                 .status(HttpStatus.OK)
                 .send(APIResponse.success(apiId, updateAttendeesDto, 'updated'))
         }
         catch (e) {
+            this.logger.error(apiId,e,'/Failed');
             return response
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .send(APIResponse.error(

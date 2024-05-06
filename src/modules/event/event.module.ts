@@ -11,6 +11,7 @@ import { EventAttendees } from '../attendees/entity/attendees.entity';
 import { CohortMember } from './entities/CohortMembers.entity';
 import { Cohort } from './entities/Cohort.entity';
 import { Users } from './entities/Users.entity';
+import { LoggerService } from 'src/common/logger/logger.service';
 
 
 @Module({
@@ -24,6 +25,6 @@ import { Users } from './entities/Users.entity';
     ])
   ],
   controllers: [EventController],
-  providers: [EventService, ConfigService, AttendeesService],
+  providers: [EventService, ConfigService, AttendeesService, LoggerService],
 })
 export class EventModule { }
