@@ -9,7 +9,7 @@ export class SearchAttendeesDto {
     })
     @IsOptional()
     @IsUUID()
-    userId: string;
+    userId?: string;
 
     @ApiProperty({
         description: 'The UUID of the event',
@@ -17,5 +17,5 @@ export class SearchAttendeesDto {
     })
     @IsOptional()
     @IsUUID()
-    eventId: string;
+    eventId?: string;
 }

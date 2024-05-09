@@ -69,7 +69,7 @@ export class Events {
     @UpdateDateColumn({ type: 'timestamp' })
     updatedAt: Date;
 
-    @OneToMany(() => EventAttendees, eventAttendees => eventAttendees.event)
+    @OneToMany(() => EventAttendees, eventAttendees => eventAttendees.event, { cascade: true })
     eventAttendees: EventAttendees[];
 
 }
