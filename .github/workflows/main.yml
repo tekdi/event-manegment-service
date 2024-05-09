@@ -43,4 +43,5 @@ jobs:
           cat << EOF > "$ENVIRONMENT"
           ${{ secrets.ENVIRONMENT_CONTENT }}
           EOF
+          cd ${{ secrets.TARGET_DIR_DEV }}
           ./deploy.sh
