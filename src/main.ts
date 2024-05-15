@@ -7,14 +7,13 @@ async function bootstrap() {
   app.enableCors();
   // app.setGlobalPrefix('api/v1');
   const options = new DocumentBuilder()
-    .setTitle('Event Management API Collection')
-    .setDescription('APIs required for frontend apps.')
+    .setTitle('Event Management')
+    .setDescription('CRUD API')
     .setVersion('1.0')
-    .addServer('http://localhost:3000/', 'Local environment')
     .build();
 
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api-docs', app, document);
+  SwaggerModule.setup('api/swagger-docs', app, document);
 
   await app.listen(3000);
 }
