@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SearchAttendeesDto } from './dto/searchAttendees.dto';
 import { UpdateAttendeesDto } from './dto/updateAttendees.dto';
+import { ok } from 'assert';
 
 @Injectable()
 export class AttendeesService {
@@ -15,7 +16,7 @@ export class AttendeesService {
         private readonly eventAttendeesRepo: Repository<EventAttendees>
     ) { }
 
-    async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId: string, userIds?: string[]): Promise<Response> {
+    async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId: string, userIds?: string[]): Promise<void> {
         const apiId = 'create.event.attendees';
         try {
             if (userIds && userIds.length > 0) {
@@ -27,20 +28,11 @@ export class AttendeesService {
                 }
                 const userIdArray = [userId];
                 const result = await this.saveattendessRecord(eventAttendeesDTO, userIdArray);
-                return response
-                    .status(HttpStatus.CREATED)
-                    .send(APIResponse.success(apiId, { attendeesId: result[0]?.eventAttendeesId }, 'Created'))
+                APIResponse.success(response, apiId, { attendeesId: result[0]?.eventAttendeesId }, String(HttpStatus.CREATED), 'Created')
             }
         }
         catch (e) {
-            return response
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .send(APIResponse.error(
-                    apiId,
-                    'Something went wrong',
-                    JSON.stringify(e),
-                    'INTERNAL_SERVER_ERROR',
-                ))
+            APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -66,11 +58,9 @@ export class AttendeesService {
             if (userId && eventId) {
                 const attendees = await this.eventAttendeesRepo.find({ where: { userId, eventId } });
                 if (!attendees || attendees.length === 0) {
-                    return response.status(HttpStatus.NOT_FOUND).send(APIResponse.error(apiId, `User : ${userId}: not regitered for this event : ${eventId} `, 'No attendees found.', 'NOT_FOUND'));
+                    APIResponse.error(response, apiId, `User : ${userId}: not regitered for this event : ${eventId} `, 'No attendees found.', 'NOT_FOUND')
                 }
-                return response
-                    .status(HttpStatus.OK)
-                    .send(APIResponse.success(apiId, attendees, 'OK'));
+                APIResponse.success(response, apiId, attendees, String(HttpStatus.OK), 'OK')
             }
             else if (userId) {
                 const query = `SELECT * FROM "Users" WHERE "userId"='${userId}'`;
@@ -78,47 +68,36 @@ export class AttendeesService {
                 if (user.length === 0) {
                     return response
                         .status(HttpStatus.NOT_FOUND)
-                        .send(APIResponse.error(apiId, 'User not found', 'User Not Exist.', 'NOT_FOUND'));
+                        .send(APIResponse.error(response, apiId, 'User not found', 'User Not Exist.', 'NOT_FOUND'));
                 }
                 const attendees = await this.eventAttendeesRepo.find({ where: { userId: userId } });
                 if (!attendees || attendees.length === 0) {
                     return response
                         .status(HttpStatus.NOT_FOUND)
-                        .send(APIResponse.error(apiId, `No attendees found for this user Id : ${userId}`, 'No attendees found.', 'NOT_FOUND'));
+                        .send(APIResponse.error(response, apiId, `No attendees found for this user Id : ${userId}`, 'No attendees found.', 'NOT_FOUND'));
                 }
                 return response
                     .status(HttpStatus.OK)
-                    .send(APIResponse.success(apiId, { attendees, ...user[0] }, 'OK'));
+                    .send(APIResponse.success(response, apiId, { attendees, ...user[0] }, String(HttpStatus.OK), 'OK'));
             }
             else if (eventId) {
                 const eventID = eventId;
                 const attendees = await this.eventAttendeesRepo.find({ where: { eventId: eventID } });
                 if (!attendees || attendees.length === 0) {
-                    return response
-                        .status(HttpStatus.NOT_FOUND)
-                        .send(
-                            APIResponse.error(
-                                apiId,
-                                `No attendees found for this event Id : ${eventId}`,
-                                'No records found.',
-                                'NOT_FOUND',
-                            ),
-                        );
+
+                    APIResponse.error(
+                        response,
+                        apiId,
+                        `No attendees found for this event Id : ${eventId}`,
+                        'No records found.',
+                        'NOT_FOUND',
+                    )
                 }
-                return response
-                    .status(HttpStatus.OK)
-                    .send(APIResponse.success(apiId, attendees, 'OK'));
+                APIResponse.success(response, apiId, attendees, String(HttpStatus.OK), 'OK')
             }
         }
         catch (e) {
-            return response
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .send(APIResponse.error(
-                    apiId,
-                    'Something went wrong',
-                    JSON.stringify(e),
-                    'INTERNAL_SERVER_ERROR',
-                ))
+            APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -128,15 +107,14 @@ export class AttendeesService {
         try {
             if (eventId && !userId) {
                 const deleteAttendees = await this.deleteEventAttendees(eventId);
-                return response
-                    .status(HttpStatus.OK)
-                    .send(
-                        APIResponse.success(
-                            apiId,
-                            { status: `Event Attendees for event ID ${eventId} deleted successfully.${deleteAttendees.affected} rows affected` },
-                            'OK',
-                        ),
-                    );
+
+                APIResponse.success(
+                    response,
+                    apiId,
+                    { status: `Event Attendees for event ID ${eventId} deleted successfully.${deleteAttendees.affected} rows affected` },
+                    String(HttpStatus.OK),
+                    'OK',
+                )
             }
             else if (userId && !eventId) {
                 const deleteAttendees = await this.deleteUserAttendees(userId);
@@ -144,8 +122,10 @@ export class AttendeesService {
                     .status(HttpStatus.OK)
                     .send(
                         APIResponse.success(
+                            response,
                             apiId,
                             { status: `Event Attendees for user ID ${userId} deleted successfully.${deleteAttendees.affected} rows affected` },
+                            String(HttpStatus.OK),
                             'OK',
                         ),
                     );
@@ -155,26 +135,19 @@ export class AttendeesService {
                 if (deletedAttendees.affected != 1) {
                     throw new BadRequestException('Not deleted');
                 }
-                return response
-                    .status(HttpStatus.OK)
-                    .send(
-                        APIResponse.success(
-                            apiId,
-                            { status: `Event Attendees for user and eventId deleted successfully.` },
-                            'OK',
-                        ),
-                    );
+
+                APIResponse.success(
+                    response,
+                    apiId,
+                    { status: `Event Attendees for user and eventId deleted successfully.` },
+                    String(HttpStatus.OK),
+                    'OK',
+                )
+
             }
         }
         catch (e) {
-            return response
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .send(APIResponse.error(
-                    apiId,
-                    'Something went wrong',
-                    JSON.stringify(e),
-                    'INTERNAL_SERVER_ERROR',
-                ))
+            APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -213,14 +186,14 @@ export class AttendeesService {
         try {
             const attendees = await this.eventAttendeesRepo.findOne({ where: { eventId: updateAttendeesDto.eventId, userId: updateAttendeesDto.userId } })
             if (!attendees) {
-                return response.status(HttpStatus.NOT_FOUND).send(
-                    APIResponse.error(
-                        apiId,
-                        `No record found for this: ${updateAttendeesDto.eventId} and ${updateAttendeesDto.userId}`,
-                        'records not found.',
-                        'NOT_FOUND',
-                    ),
-                );
+
+                APIResponse.error(
+                    response,
+                    apiId,
+                    `No record found for this: ${updateAttendeesDto.eventId} and ${updateAttendeesDto.userId}`,
+                    'records not found.',
+                    'NOT_FOUND',
+                )
             }
             if (updateAttendeesDto.joinedLeftHistory && Object.keys(updateAttendeesDto.joinedLeftHistory).length > 0) {
                 updateAttendeesDto.joinedLeftHistory = attendees.joinedLeftHistory.concat(updateAttendeesDto.joinedLeftHistory);
@@ -232,17 +205,10 @@ export class AttendeesService {
             }
             return response
                 .status(HttpStatus.OK)
-                .send(APIResponse.success(apiId, updateAttendeesDto, 'updated'))
+                .send(APIResponse.success(response, apiId, updateAttendeesDto, String(HttpStatus.OK), 'updated'))
         }
         catch (e) {
-            return response
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .send(APIResponse.error(
-                    apiId,
-                    'Something went wrong',
-                    JSON.stringify(e),
-                    'INTERNAL_SERVER_ERROR',
-                ))
+            APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 }

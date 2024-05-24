@@ -2,7 +2,7 @@ import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Events } from './entities/event.entity';
 import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
@@ -26,7 +26,7 @@ export class EventService {
     private readonly usersRepo: Repository<Users>,
     private readonly attendeesService: AttendeesService
   ) { }
-  async createEvent(createEventDto: CreateEventDto, userId: string, response: Response): Promise<Response> {
+  async createEvent(createEventDto: CreateEventDto, userId: string, response: Response): Promise<void> {
     const apiId = 'api.create.event';
     try {
       // checkl if isRistricted true then check cohorts id or user id present in db or not
@@ -45,19 +45,10 @@ export class EventService {
       if (created.eventID && createEventDto.isRestricted === true) {
         await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response)
       }
-      return response
-        .status(HttpStatus.CREATED)
-        .send(APIResponse.success(apiId, { event_ID: created.eventID }, 'CREATED'));
+      APIResponse.success(response, apiId, { event_ID: created.eventID }, String(HttpStatus.OK), 'CREATED');
     }
     catch (e) {
-      return response
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .send(APIResponse.error(
-          apiId,
-          'Something went wrong in event creation',
-          JSON.stringify(e),
-          'INTERNAL_SERVER_ERROR',
-        ))
+      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
     }
   }
 
@@ -71,30 +62,18 @@ export class EventService {
       }
       const result = await this.eventRespository.query(finalquery);
       if (result.length === 0) {
-        return response
-          .status(HttpStatus.NOT_FOUND)
-          .send(
-            APIResponse.error(
-              apiId,
-              `No event found`,
-              'No records found.',
-              'NOT_FOUND',
-            ),
-          );
+        APIResponse.error(
+          response,
+          apiId,
+          `No event found`,
+          'records not found.',
+          String(HttpStatus.NOT_FOUND)
+        )
       }
-      return response
-        .status(HttpStatus.OK)
-        .send(APIResponse.success(apiId, result, "OK"));
+      APIResponse.success(response, apiId, result, String(HttpStatus.OK), "OK");
     }
     catch (e) {
-      return response
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .send(APIResponse.error(
-          apiId,
-          'Something went wrong to search event',
-          JSON.stringify(e),
-          'INTERNAL_SERVER_ERROR',
-        ))
+      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
     }
   }
 
@@ -103,31 +82,19 @@ export class EventService {
     try {
       const getEventById = await this.eventRespository.findOne({ where: { eventID } });
       if (!getEventById) {
-        return response
-          .status(HttpStatus.NOT_FOUND)
-          .send(
-            APIResponse.error(
-              apiId,
-              `No event found for: ${eventID}`,
-              'No records found.',
-              'NOT_FOUND',
-            ),
-          );
+        APIResponse.error(
+          response,
+          apiId,
+          `No event found for: ${eventID}`,
+          'records not found',
+          String(HttpStatus.NOT_FOUND)
+        )
       }
-      return response
-        .status(HttpStatus.OK)
-        .send(APIResponse.success(apiId, getEventById, 'OK'))
+      APIResponse.success(response, apiId, getEventById, String(HttpStatus.OK), 'Get Event successful')
 
     }
     catch (e) {
-      return response
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .send(APIResponse.error(
-          apiId,
-          'Something went wrong to get event by id',
-          `Failure Retrieving event. Error is: ${e}`,
-          'INTERNAL_SERVER_ERROR',
-        ))
+      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
     }
   }
 
@@ -136,14 +103,13 @@ export class EventService {
     try {
       const event = await this.eventRespository.findOne({ where: { eventID } })
       if (!event) {
-        return response.status(HttpStatus.NOT_FOUND).send(
-          APIResponse.error(
-            apiId,
-            `No event found for: ${eventID}`,
-            'records not found.',
-            'NOT_FOUND',
-          ),
-        );
+        APIResponse.error(
+          response,
+          apiId,
+          `No event found for: ${eventID}`,
+          'records not found.',
+          String(HttpStatus.NOT_FOUND)
+        )
       }
 
       // convert public event into private event if status is draft
@@ -196,19 +162,10 @@ export class EventService {
       if (!updated_result) {
         throw new BadRequestException('Event update failed');
       }
-      return response
-        .status(HttpStatus.CREATED)
-        .send(APIResponse.success(apiId, { id: eventID, status: 'updated Successfully' }, 'OK'))
+      APIResponse.success(response, apiId, { id: eventID }, String(HttpStatus.OK), 'updated Successfully')
     }
     catch (e) {
-      return response
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .send(APIResponse.error(
-          apiId,
-          'Something went wrong to update the event',
-          `Failure to update event Error is: ${e}`,
-          'INTERNAL_SERVER_ERROR',
-        ))
+      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
     }
   }
 
@@ -217,38 +174,29 @@ export class EventService {
     try {
       const event_id = await this.eventRespository.findOne({ where: { eventID } })
       if (!event_id) {
-        return response.status(HttpStatus.NOT_FOUND).send(
-          APIResponse.error(
-            apiId,
-            `No event id found: ${eventID}`,
-            'records not found.',
-            'NOT_FOUND',
-          ),
-        );
+        APIResponse.error(
+          response,
+          apiId,
+          `No event found for: ${eventID}`,
+          'records not found.',
+          String(HttpStatus.NOT_FOUND)
+        )
       }
       const deletedEvent = await this.eventRespository.delete({ eventID });
       if (deletedEvent.affected !== 1) {
         throw new BadRequestException('Event not deleted');
       }
-      return response
-        .status(HttpStatus.OK)
-        .send(
-          APIResponse.success(
-            apiId,
-            { status: `Event with ID ${eventID} deleted successfully.` },
-            'OK',
-          ),
-        );
+
+      APIResponse.success(
+        response,
+        apiId,
+        { status: `Event with ID ${eventID} deleted successfully.` },
+        String(HttpStatus.OK),
+        'Deleted successfully',
+      )
     }
     catch (e) {
-      return response
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .send(APIResponse.error(
-          apiId,
-          'Something went wrong to get event by id',
-          `Failure Retrieving event. Error is: ${e}`,
-          'INTERNAL_SERVER_ERROR',
-        ))
+      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
     }
   }
 
