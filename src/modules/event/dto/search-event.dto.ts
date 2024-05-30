@@ -1,13 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsDateString, IsEnum, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsOptional, IsDateString, IsEnum, IsString, ValidateNested } from "class-validator";
 
 export class FilterDto {
 
     @ApiProperty({ example: '2024-01-01', description: 'Start date in YYYY-MM-DD format' })
+    @IsOptional()
     @IsDateString()
     startDate: string;
 
     @ApiProperty({ example: '2024-01-01', description: 'Start date in YYYY-MM-DD format' })
+    @IsOptional()
     @IsDateString()
     endDate: string;
 
@@ -16,7 +19,7 @@ export class FilterDto {
         description: 'Array of status values: live, draft, inActive'
     })
     @IsOptional()
-    @IsEnum(['live', 'draft', 'inActive'], { each: true })
+    @IsEnum(['live', 'draft', 'inActive'], { each: true, message: 'Status must be one of: live, draft, inActive' })
     status?: string[];
 
     @ApiProperty({
@@ -40,5 +43,7 @@ export class FilterDto {
 
 export class SearchFilterDto {
     @ApiProperty({ type: FilterDto, description: 'Filters for search' })
+    @ValidateNested({ each: true })
+    @Type(() => FilterDto)
     filters: FilterDto
 }

@@ -168,6 +168,8 @@ export class CreateEventDto {
 
   updatedBy: string;
 
+  autoEnroll: boolean;
+
 }
 
 

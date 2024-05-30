@@ -23,6 +23,9 @@ export class Events {
     @Column({ nullable: false, default: false })
     isRestricted: boolean;
 
+    @Column({ default: false })
+    autoEnroll: boolean;
+
     @Column({ nullable: false, type: 'timestamp' })
     startDatetime: Date;
 
