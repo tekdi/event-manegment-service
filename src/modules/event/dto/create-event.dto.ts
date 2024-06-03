@@ -180,7 +180,11 @@ export class CreateEventDto {
   @ApiProperty({
     type: Object,
     description: 'Params',
-    example: { id: 'nvjvv', password: 'vcvcv' },
+    example: {
+      id: 94292554617,
+      topic: "Test_Meeting",
+      password: "dff4545"
+    },
   })
   @IsObject()
   @IsOptional()

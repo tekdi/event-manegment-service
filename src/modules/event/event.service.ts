@@ -15,6 +15,7 @@ import { Cohort } from './entities/Cohort.entity';
 import { Users } from './entities/Users.entity';
 import { MeetingsService } from '../meetings/meetings.service';
 import { CreateMeetingDto } from '../meetings/dto/create-Meeting.dto';
+import { APIID } from 'src/common/utils/api-id.config';
 
 @Injectable()
 export class EventService {
@@ -31,7 +32,7 @@ export class EventService {
     private readonly meetingsService: MeetingsService
   ) { }
   async createEvent(createEventDto: CreateEventDto, userId: string, response: Response): Promise<void> {
-    const apiId = 'api.create.event';
+    const apiId = APIID.EVENT_CREATE;
     try {
       // checkl if isRistricted true then check cohorts id or user id present in db or not
       if (createEventDto.isRestricted === true) {
@@ -48,7 +49,7 @@ export class EventService {
         createEventDto.autoEnroll = true;
       }
 
-      //api call for zoom/googlemeet if new event is created by user
+      //api call for zoom/googlemeet if new or existing event is created by user
       if (createEventDto.eventType === 'online') {
         if (createEventDto.isMeetingNew) {
           const meeting: CreateMeetingDto = {
@@ -62,10 +63,9 @@ export class EventService {
           const result = await this.meetingsService.createMeeting(meeting);
           if (result) {
             createEventDto.meetingRecord = result;
-            console.log(result);
           }
           else {
-            return APIResponse.error(response, apiId, "Internal Server Error", `Error is `, String(HttpStatus.INTERNAL_SERVER_ERROR));
+            return APIResponse.error(response, apiId, "Internal Server Error", `Event Not Created`, HttpStatus.INTERNAL_SERVER_ERROR);
           }
         }
         // Ensure offline fields are null for online events
@@ -86,21 +86,21 @@ export class EventService {
         const attendeesEnrolledResult = await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId)
         // Check if attendees were successfully registered
         if (attendeesEnrolledResult && attendeesEnrolledResult.length > 0) {
-          return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: true }, String(HttpStatus.OK), 'Event and attendees registered successfully');
+          return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: true }, HttpStatus.CREATED, 'Event and attendees registered successfully');
         } else {
-          return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: false }, String(HttpStatus.OK), 'Event created but attendees not registered');
+          return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: false }, HttpStatus.CREATED, 'Event created but attendees not registered');
         }
       }
-      return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: true }, String(HttpStatus.OK), 'Event and attendees registered successfully');
-
+      return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: true }, HttpStatus.OK, 'Event and attendees registered successfully');
     }
     catch (e) {
-      return APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+      const errorMessage = e.message || 'Internal server error';
+      return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async getEvents(response: Response, requestBody: SearchFilterDto) {
-    const apiId = 'api.Search.Event'
+    const apiId = APIID.EVENT_LIST;
     try {
       let finalquery = `SELECT * FROM "Events"`;
       const { filters } = requestBody;
@@ -109,53 +109,55 @@ export class EventService {
       }
       const result = await this.eventRespository.query(finalquery);
       if (result.length === 0) {
-        APIResponse.error(
+        return APIResponse.error(
           response,
           apiId,
           `No event found`,
           'records not found.',
-          String(HttpStatus.NOT_FOUND)
+          HttpStatus.NOT_FOUND
         )
       }
-      APIResponse.success(response, apiId, result, String(HttpStatus.OK), "OK");
+      return APIResponse.success(response, apiId, result, HttpStatus.OK, "OK");
     }
     catch (e) {
-      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+      const errorMessage = e.message || 'Internal server error';
+      return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async getEventByID(eventID: string, response: Response) {
-    const apiId = 'api.get.event.byId'
+    const apiId = APIID.EVENT_GET;
     try {
       const getEventById = await this.eventRespository.findOne({ where: { eventID } });
       if (!getEventById) {
-        APIResponse.error(
+        return APIResponse.error(
           response,
           apiId,
           `No event found for: ${eventID}`,
           'records not found',
-          String(HttpStatus.NOT_FOUND)
+          HttpStatus.NOT_FOUND
         )
       }
-      APIResponse.success(response, apiId, getEventById, String(HttpStatus.OK), 'Get Event successful')
+      return APIResponse.success(response, apiId, getEventById, HttpStatus.OK, 'Event fetched successfully')
 
     }
     catch (e) {
-      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+      const errorMessage = e.message || 'Internal server error';
+      return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async updateEvent(eventID: string, updateEventDto: UpdateEventDto, userId: string, response: Response) {
-    const apiId = 'api.update.event';
+    const apiId = APIID.EVENT_UPDATE;
     try {
       const event = await this.eventRespository.findOne({ where: { eventID } })
       if (!event) {
-        APIResponse.error(
+        return APIResponse.error(
           response,
           apiId,
           `No event found for: ${eventID}`,
           'records not found.',
-          String(HttpStatus.NOT_FOUND)
+          HttpStatus.NOT_FOUND
         )
       }
 
@@ -225,15 +227,16 @@ export class EventService {
       if (!updated_result) {
         throw new BadRequestException('Event update failed');
       }
-      APIResponse.success(response, apiId, { id: eventID }, String(HttpStatus.OK), 'updated Successfully')
+      APIResponse.success(response, apiId, { id: eventID }, HttpStatus.OK, 'updated Successfully')
     }
     catch (e) {
-      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+      const errorMessage = e.message || 'Internal server error';
+      return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async deleteEvent(eventID: string, response: Response) {
-    const apiId = 'api.delete.event'
+    const apiId = APIID.EVENT_DELETE;
     try {
       const event_id = await this.eventRespository.findOne({ where: { eventID } })
       if (!event_id) {
@@ -242,7 +245,7 @@ export class EventService {
           apiId,
           `No event found for: ${eventID}`,
           'records not found.',
-          String(HttpStatus.NOT_FOUND)
+          HttpStatus.NOT_FOUND
         )
       }
       const deletedEvent = await this.eventRespository.delete({ eventID });
@@ -250,16 +253,17 @@ export class EventService {
         throw new BadRequestException('Event not deleted');
       }
 
-      APIResponse.success(
+      return APIResponse.success(
         response,
         apiId,
         { status: `Event with ID ${eventID} deleted successfully.` },
-        String(HttpStatus.OK),
+        HttpStatus.OK,
         'Deleted successfully',
       )
     }
     catch (e) {
-      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+      const errorMessage = e.message || 'Internal server error';
+      return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -359,5 +363,4 @@ export class EventService {
       }
     }
   }
-
 }
