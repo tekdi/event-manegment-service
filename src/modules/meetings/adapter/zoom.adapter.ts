@@ -32,7 +32,9 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
                     },
                     data: createMeetingDto,
                 });
-                return resp.data;
+                const { id, password } = resp.data;
+                return { id, password }
+                // return resp.data;
             }
         }
         catch (err) {

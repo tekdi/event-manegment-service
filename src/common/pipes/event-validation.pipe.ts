@@ -1,4 +1,4 @@
-import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
+import { PipeTransform, Injectable, BadRequestException, ArgumentMetadata } from '@nestjs/common';
 import { CreateEventDto } from 'src/modules/event/dto/create-event.dto';
 
 @Injectable()
@@ -70,4 +70,17 @@ export class ParamsValidationPipe implements PipeTransform {
             }
         }
     }
+}
+
+@Injectable()
+export class ValidateMeetingType implements PipeTransform {
+    transform(createEventDto: CreateEventDto) {
+        if (createEventDto.eventType === 'online' && !createEventDto.isMeetingNew) {
+            if (typeof createEventDto.meetingRecord !== 'object' || Object.keys(createEventDto.meetingRecord).length === 0) {
+                throw new BadRequestException('Plase Pass the existing meeting details as an object')
+            }
+        }
+        return createEventDto;
+    }
+
 }

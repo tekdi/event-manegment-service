@@ -23,7 +23,7 @@ export class AttendeesController {
     async create(@Body() eventAttendeesDTO: EventAttendeesDTO, @Res() response: Response) {
         const userId = '0050d1cb-64d0-4902-9ef0-a868aa7aa713'; // come from JWT token
         eventAttendeesDTO.enrolledBy = userId;
-        return this.attendeesService.createAttendees(eventAttendeesDTO, response, userId);
+        return this.attendeesService.createSingleAttendees(eventAttendeesDTO, response, userId);
     }
 
     @Post('/list')

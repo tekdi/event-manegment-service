@@ -13,6 +13,9 @@ import { EventAttendeesDTO } from '../attendees/dto/EventAttendance.dto';
 import { CohortMember } from './entities/CohortMembers.entity';
 import { Cohort } from './entities/Cohort.entity';
 import { Users } from './entities/Users.entity';
+import { MeetingsService } from '../meetings/meetings.service';
+import { CreateMeetingDto } from '../meetings/dto/create-Meeting.dto';
+
 @Injectable()
 export class EventService {
   constructor(
@@ -24,7 +27,8 @@ export class EventService {
     private readonly cohortRepo: Repository<Cohort>,
     @InjectRepository(Users)
     private readonly usersRepo: Repository<Users>,
-    private readonly attendeesService: AttendeesService
+    private readonly attendeesService: AttendeesService,
+    private readonly meetingsService: MeetingsService
   ) { }
   async createEvent(createEventDto: CreateEventDto, userId: string, response: Response): Promise<void> {
     const apiId = 'api.create.event';
@@ -43,15 +47,55 @@ export class EventService {
       if (createEventDto.isRestricted === true) {
         createEventDto.autoEnroll = true;
       }
+
+      //api call for zoom/googlemeet if new event is created by user
+      if (createEventDto.eventType === 'online') {
+        if (createEventDto.isMeetingNew) {
+          const meeting: CreateMeetingDto = {
+            meetingType: createEventDto.onlineProvider,
+            topic: createEventDto.title,
+            type: 2,
+            start_time: createEventDto.startDatetime,
+            duration: 60,
+            timezone: 'Asia/Kolkata',
+          }
+          const result = await this.meetingsService.createMeeting(meeting);
+          if (result) {
+            createEventDto.meetingRecord = result;
+            console.log(result);
+          }
+          else {
+            return APIResponse.error(response, apiId, "Internal Server Error", `Error is `, String(HttpStatus.INTERNAL_SERVER_ERROR));
+          }
+        }
+        // Ensure offline fields are null for online events
+        createEventDto.location = null;
+        createEventDto.latitude = null;
+        createEventDto.longitude = null;
+      }
+      // Handle offline event
+      if (createEventDto.eventType === 'offline') {
+        // Ensure online fields are null for offline events
+        createEventDto.isMeetingNew = null;
+        createEventDto.meetingRecord = null;
+        createEventDto.onlineProvider = null;
+      }
       const created = await this.eventRespository.save(createEventDto);
       // Create attendees if isRsetricted true and event status is live
       if (created.eventID && createEventDto.isRestricted === true && createEventDto.status == 'live') {
-        await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response)
+        const attendeesEnrolledResult = await this.CreateAttendeedforRestrictedEvent(createEventDto, created, userId)
+        // Check if attendees were successfully registered
+        if (attendeesEnrolledResult && attendeesEnrolledResult.length > 0) {
+          return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: true }, String(HttpStatus.OK), 'Event and attendees registered successfully');
+        } else {
+          return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: false }, String(HttpStatus.OK), 'Event created but attendees not registered');
+        }
       }
-      APIResponse.success(response, apiId, { event_ID: created.eventID }, String(HttpStatus.OK), 'CREATED');
+      return APIResponse.success(response, apiId, { event_ID: created.eventID, attendeesEnrolled: true }, String(HttpStatus.OK), 'Event and attendees registered successfully');
+
     }
     catch (e) {
-      APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+      return APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
     }
   }
 
@@ -125,7 +169,7 @@ export class EventService {
             else if (updateEventDto.params.cohortIds) {
               await this.validateCohortIds(updateEventDto.params.cohortIds)
             }
-            await this.CreateAttendeedforRestrictedEvent(updateEventDto, event, userId, response)
+            await this.CreateAttendeedforRestrictedEvent(updateEventDto, event, userId)
           }
         }
         else {
@@ -151,10 +195,10 @@ export class EventService {
       if (event.status == 'draft' && updateEventDto.status == 'live' && event.isRestricted == true) {
         if (event.params && Object.keys(event.params.length > 0)) {
           if (event.params.userIds) {
-            await this.CreateAttendeedforRestrictedEvent(event, event, userId, response)
+            await this.CreateAttendeedforRestrictedEvent(event, event, userId)
           }
           else if (event.params.cohortIds) {
-            await this.CreateAttendeedforRestrictedEvent(event, event, userId, response)
+            await this.CreateAttendeedforRestrictedEvent(event, event, userId)
           }
         }
       }
@@ -280,7 +324,7 @@ export class EventService {
     }
   }
 
-  async CreateAttendeedforRestrictedEvent(createEventDto, created, userId, response) {
+  async CreateAttendeedforRestrictedEvent(createEventDto, created, userId) {
     const attendeedDto: EventAttendeesDTO = {
       eventId: created.eventID,
       enrolledBy: userId,
@@ -299,11 +343,20 @@ export class EventService {
         userIds.push(member.userId);
       }
       if (userIds.length > 0) {
-        await this.attendeesService.createAttendees(attendeedDto, response, userId, userIds);
+        try {
+          return await this.attendeesService.saveattendessRecord(attendeedDto, userIds);
+        } catch (e) {
+          return e
+        }
       }
     }
     else if (userIds?.length > 0) {
-      await this.attendeesService.createAttendees(attendeedDto, response, userId, userIds);
+      try {
+        return await this.attendeesService.saveattendessRecord(attendeedDto, userIds);
+      } catch (e) {
+        console.error(`Failed to create event attendees: ${e.message || e}`);
+        throw e
+      }
     }
   }
 

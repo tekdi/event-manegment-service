@@ -32,7 +32,7 @@ export class Events {
     @Column({ nullable: false, type: 'timestamp' })
     endDatetime: Date;
 
-    @Column({ nullable: false })
+    @Column()
     location: string;
 
     @Column({ nullable: false, type: 'double precision' })
@@ -71,6 +71,12 @@ export class Events {
 
     @UpdateDateColumn({ type: 'timestamp' })
     updatedAt: Date;
+
+    @Column()
+    isMeetingNew: boolean;
+
+    @Column({ type: 'json' })
+    meetingRecord: any;
 
     @OneToMany(() => EventAttendees, eventAttendees => eventAttendees.event, { cascade: true })
     eventAttendees: EventAttendees[];

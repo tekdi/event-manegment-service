@@ -7,7 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SearchAttendeesDto } from './dto/searchAttendees.dto';
 import { UpdateAttendeesDto } from './dto/updateAttendees.dto';
-import { ok } from 'assert';
 
 @Injectable()
 export class AttendeesService {
@@ -16,39 +15,40 @@ export class AttendeesService {
         private readonly eventAttendeesRepo: Repository<EventAttendees>
     ) { }
 
-    async createAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId: string, userIds?: string[]): Promise<void> {
+    async createSingleAttendees(eventAttendeesDTO: EventAttendeesDTO, response: Response, userId: string) {
         const apiId = 'create.event.attendees';
         try {
-            if (userIds && userIds.length > 0) {
-                const result = await this.saveattendessRecord(eventAttendeesDTO, userIds);
-            } else {
-                const attendees = await this.eventAttendeesRepo.find({ where: { userId, eventId: eventAttendeesDTO.eventId } });
-                if (attendees.length > 0) {
-                    throw new BadRequestException(`You have already registered for this event: ${eventAttendeesDTO.eventId}`)
-                }
-                const userIdArray = [userId];
-                const result = await this.saveattendessRecord(eventAttendeesDTO, userIdArray);
-                APIResponse.success(response, apiId, { attendeesId: result[0]?.eventAttendeesId }, String(HttpStatus.CREATED), 'Created')
+            const attendees = await this.eventAttendeesRepo.find({ where: { userId, eventId: eventAttendeesDTO.eventId } });
+            if (attendees.length > 0) {
+                throw new BadRequestException(`You have already registered for this event: ${eventAttendeesDTO.eventId}`)
             }
+            const userIdArray = [userId];
+            const result = await this.saveattendessRecord(eventAttendeesDTO, userIdArray);
+            return APIResponse.success(response, apiId, { attendeesId: result[0]?.eventAttendeesId }, String(HttpStatus.CREATED), 'Created')
         }
         catch (e) {
-            APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
+            return APIResponse.error(response, apiId, "Internal Server Error", `Error is ${e}`, String(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
     async saveattendessRecord(eventAttendeesDTO: EventAttendeesDTO, userIds: string[]) {
-        const eventAttendees = userIds.map(userId => ({
-            userId: userId,
-            eventId: eventAttendeesDTO.eventId,
-            joinedLeftHistory: [],
-            duration: 0,
-            isAttended: false,
-            status: eventAttendeesDTO.status,
-            enrolledBy: eventAttendeesDTO.enrolledBy
-        }));
+        try {
+            const eventAttendees = userIds.map(userId => ({
+                userId: userId,
+                eventId: eventAttendeesDTO.eventId,
+                joinedLeftHistory: [],
+                duration: 0,
+                isAttended: false,
+                status: eventAttendeesDTO.status,
+                enrolledBy: eventAttendeesDTO.enrolledBy
+            }));
 
-        const results = await this.eventAttendeesRepo.save(eventAttendees);
-        return results;
+            const results = await this.eventAttendeesRepo.save(eventAttendees);
+            return results;
+        }
+        catch (e) {
+            return e;
+        }
     }
 
     async getAttendees(searchAttendeesDto: SearchAttendeesDto, response: Response) {

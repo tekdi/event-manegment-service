@@ -21,7 +21,7 @@ export class CreateMeetingDto {
     })
     @IsString()
     @IsNotEmpty()
-    topic: number;
+    topic: string;
 
 
 
@@ -44,11 +44,11 @@ export class CreateMeetingDto {
 
 
     @ApiProperty({
-        type: String,
+        type: Date,
         description: 'Start Datetime',
         example: '2024-03-18T10:00:00Z'
     })
-    start_time: string;
+    start_time: Date;
 
 
     @ApiProperty({

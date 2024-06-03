@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsEnum, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString, IsObject } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsEnum, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString, IsObject, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEventDto {
@@ -87,6 +87,7 @@ export class CreateEventDto {
     description: 'Location',
     example: 'Event Location'
   })
+  @ValidateIf(o => o.eventType === 'offline')
   @IsString()
   @IsNotEmpty()
   location: string;
@@ -94,12 +95,14 @@ export class CreateEventDto {
 
   @ApiProperty({
     type: Number,
-    description: 'Latitude',
+    description: 'Longitude',
     example: 18.508345134886994
   })
+  @ValidateIf(o => o.eventType === 'offline')
   @IsLongitude()
   longitude: number;
 
+  @ValidateIf(o => o.eventType === 'offline')
   @ApiProperty({
     type: Number,
     description: 'Latitude',
@@ -111,8 +114,9 @@ export class CreateEventDto {
   @ApiProperty({
     type: String,
     description: 'Online Provider',
-    example: 'Zoom'
+    example: 'zoom'
   })
+  @ValidateIf(o => o.eventType === 'online')
   @IsString()
   @IsNotEmpty()
   onlineProvider: string;
@@ -164,12 +168,29 @@ export class CreateEventDto {
   @IsNotEmpty()
   status: string;
 
+
+  @ApiProperty({
+    type: Boolean,
+    description: 'isMeetingNew',
+    example: false
+  })
+  @IsOptional()
+  isMeetingNew: boolean;
+
+  @ApiProperty({
+    type: Object,
+    description: 'Params',
+    example: { id: 'nvjvv', password: 'vcvcv' },
+  })
+  @IsObject()
+  @IsOptional()
+  meetingRecord: any;
+
   createdBy: string;
 
   updatedBy: string;
 
   autoEnroll: boolean;
-
 }
 
 
