@@ -24,9 +24,17 @@ export class MeetingsController {
     }
 
 
+    @Get('onlineProvider')
+    async getOnlineProvider(@Res() response: Response) {
+        return await this.meetingsService.getOnlineProvide(response)
+    }
+
     @UseFilters(new AllExceptionsFilter(APIID.MEETING_GET))
     @Get('/:meetingName')
     async getMeetingList(@Param('meetingName') meetingName: string, @Res() response: Response) {
         return await this.meetingsService.getMeetingList(meetingName, response);
     }
+
+
+
 }
