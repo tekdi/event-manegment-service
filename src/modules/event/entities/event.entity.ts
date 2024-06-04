@@ -76,7 +76,7 @@ export class Events {
     isMeetingNew: boolean;
 
     @Column({ type: 'json' })
-    meetingRecord: any;
+    meetingDetails: any;
 
     @OneToMany(() => EventAttendees, eventAttendees => eventAttendees.event, { cascade: true })
     eventAttendees: EventAttendees[];

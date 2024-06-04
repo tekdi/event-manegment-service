@@ -188,7 +188,7 @@ export class CreateEventDto {
   })
   @IsObject()
   @IsOptional()
-  meetingRecord: any;
+  meetingDetails: any;
 
   createdBy: string;
 

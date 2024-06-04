@@ -76,7 +76,7 @@ export class ParamsValidationPipe implements PipeTransform {
 export class ValidateMeetingType implements PipeTransform {
     transform(createEventDto: CreateEventDto) {
         if (createEventDto.eventType === 'online' && !createEventDto.isMeetingNew) {
-            if (typeof createEventDto.meetingRecord !== 'object' || Object.keys(createEventDto.meetingRecord).length === 0) {
+            if (typeof createEventDto.meetingDetails !== 'object' || Object.keys(createEventDto.meetingDetails).length === 0) {
                 throw new BadRequestException('Plase Pass the existing meeting details as an object')
             }
         }

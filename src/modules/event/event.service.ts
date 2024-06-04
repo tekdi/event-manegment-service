@@ -62,7 +62,7 @@ export class EventService {
           }
           const result = await this.meetingsService.createMeeting(meeting);
           if (result) {
-            createEventDto.meetingRecord = result;
+            createEventDto.meetingDetails = result;
           }
           else {
             return APIResponse.error(response, apiId, "Internal Server Error", `Event Not Created`, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -77,7 +77,7 @@ export class EventService {
       if (createEventDto.eventType === 'offline') {
         // Ensure online fields are null for offline events
         createEventDto.isMeetingNew = null;
-        createEventDto.meetingRecord = null;
+        createEventDto.meetingDetails = null;
         createEventDto.onlineProvider = null;
       }
       const created = await this.eventRespository.save(createEventDto);
