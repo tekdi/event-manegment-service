@@ -14,8 +14,8 @@ export class MeetingAdapterFactory {
         switch (meetingType) {
             case 'zoom':
                 return this.zoomMeetingAdapter;
-            case 'googleMeet':
-                return this.googleMeetingAdapter;
+            // case 'googleMeet':
+            //     return this.googleMeetingAdapter;
             default:
                 throw new BadRequestException('Invalid Meeting type.');
         }
