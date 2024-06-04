@@ -27,11 +27,6 @@ export class MeetingsController {
     @UseFilters(new AllExceptionsFilter(APIID.MEETING_GET))
     @Get('/:meetingName')
     async getMeetingList(@Param('meetingName') meetingName: string, @Res() response: Response) {
-        const validateMeetingName = ['zoom'];
-        if (!validateMeetingName.includes(meetingName.toLowerCase())) {
-            throw new BadRequestException(`Invalid meeting Type: ${meetingName}`)
-        }
-        const meetingType = this.adapterFactory.getAdapter(meetingName)
-        return await meetingType.getMeetingList(response);
+        return await this.meetingsService.getMeetingList(meetingName, response);
     }
 }

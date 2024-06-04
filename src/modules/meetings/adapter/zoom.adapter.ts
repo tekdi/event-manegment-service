@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { BadRequestException, HttpStatus, Injectable } from "@nestjs/common";
 import { MeetingServiceInterface } from '../interface/meeting-service.interface'
 import { CreateMeetingDto } from "../dto/create-Meeting.dto";
 import axios from "axios";
@@ -22,47 +22,45 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
     }
     async createMeeting(createMeetingDto: CreateMeetingDto) {
         try {
-            const token = await this.getToken();
-            if (token) {
-                const resp = await axios({
-                    method: "post",
-                    url: this.zoom_url,
-                    headers: {
-                        Authorization: "Bearer " + `${token} `,
-                        "Content-Type": "application/json",
-                    },
-                    data: createMeetingDto,
-                });
-                const { id, password } = resp.data;
-                return { id, password }
-                // return resp.data;
-            }
-        }
-        catch (err) {
-            if (err.status == undefined) {
-                console.log("Error : ", err);
-            }
-            if (err.status === 400) {
-                return err;
-            }
-        }
-    }
-
-    async getMeetingList(response: Response) {
-        const apiId = 'api.meeting.get'
-        try {
+            this.checkConfigExistOrNot();
             const token = await this.getToken();
             if (!token) {
                 throw new Error('Failed to retrieve access token');
             }
-            const resp = await axios({
-                method: "get",
-                url: this.zoom_url,
+            const resp = await axios.post(this.zoom_url, createMeetingDto, {
                 headers: {
-                    Authorization: "Bearer " + `${token} `,
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             });
+            const { id, password } = resp.data;
+            return { id, password }
+            // return resp.data;
+        }
+        catch (err) {
+            if (err.response && err.response.status === 400) {
+                throw new Error('Bad request: ' + err.response.data.message);
+            } else if (err.response && err.response.status) {
+                throw new Error(`Error ${err.response.status}: ${err.response.data.message}`);
+            } else {
+                throw new Error('Internal server error');
+            }
+        }
+    }
+    async getMeetingList() {
+        try {
+            this.checkConfigExistOrNot();
+            const token = await this.getToken();
+            if (!token) {
+                throw new Error('Failed to retrieve access token');
+            }
+            const resp = await axios.get(this.zoom_url, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
             const meetings = resp.data.meetings;
             const result = meetings.map((obj) =>
                 ["id", "topic"].reduce((newObj, key) => {
@@ -70,32 +68,35 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
                     return newObj;
                 }, {})
             );
-            return APIResponse.success(response, apiId, result, HttpStatus.OK, 'Meeting list fetched succesfully')
-            // return newArray;
+            return result;
 
-        }
-        catch (e) {
-            const errorMessage = e.message || 'Internal server error';
-            return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (e) {
+            throw new Error(e.message || 'Internal server error');
         }
     }
 
     async getToken() {
         try {
-            const base64Credentials = btoa(`${this.client_id}` + ":" + `${this.secret_token}`);
-            const resp = await axios({
-                method: "POST",
-                url:
-                    `${this.zoom_auth_url}?grant_type=account_credentials&account_id=${this.account_id}`,
-
-                headers: {
-                    Authorization: "Basic " + `${base64Credentials} `,
-                },
-            });
+            const base64Credentials = Buffer.from(`${this.client_id}:${this.secret_token}`).toString('base64');
+            const resp = await axios.post(
+                `${this.zoom_auth_url}?grant_type=account_credentials&account_id=${this.account_id}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Basic ${base64Credentials}`,
+                    },
+                }
+            );
             return resp.data.access_token;
-        }
-        catch (e) {
-            throw new Error(e.message);
+        } catch (e) {
+            return e.message;
         }
     }
+
+    checkConfigExistOrNot() {
+        if (!this.zoom_url || !this.zoom_auth_url || !this.account_id || !this.client_id || !this.secret_token) {
+            throw new Error('Configuration missing for Zoom meeting');
+        }
+    }
+
 }
