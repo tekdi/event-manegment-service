@@ -8,5 +8,6 @@ export const APIID = {
     ATTENDEES_UPDATE: "api.attendees.update",
     ATTENDEES_LIST: "api.attendees.list",
     ATTENDEES_DELETE: "api.attendees.delete",
+    MEETING_GET: "api.meeting.get"
 
 }

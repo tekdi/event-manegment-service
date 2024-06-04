@@ -13,7 +13,7 @@ export class MeetingsService {
             return result;
         }
         catch (e) {
-            return e.message;
+            throw new Error(e.message);
         }
     }
 }

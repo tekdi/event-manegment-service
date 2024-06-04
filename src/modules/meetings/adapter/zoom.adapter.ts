@@ -1,9 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { MeetingServiceInterface } from '../interface/meeting-service.interface'
 import { CreateMeetingDto } from "../dto/create-Meeting.dto";
 import axios from "axios";
 import { ConfigService } from "@nestjs/config";
-
+import APIResponse from "src/common/utils/response";
+import { Response } from "express";
 @Injectable()
 export class ZoomMeetingAdapter implements MeetingServiceInterface {
     private zoom_url: string
@@ -47,33 +48,35 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
         }
     }
 
-    async getMeetingList() {
+    async getMeetingList(response: Response) {
+        const apiId = 'api.meeting.get'
         try {
             const token = await this.getToken();
-            if (token) {
-                const resp = await axios({
-                    method: "get",
-                    url: this.zoom_url,
-                    headers: {
-                        Authorization: "Bearer " + `${token} `,
-                        "Content-Type": "application/json",
-                    },
-                });
-                const meetings = resp.data.meetings;
-                const newArray = meetings.map((obj) =>
-                    ["id", "topic"].reduce((newObj, key) => {
-                        newObj[key] = obj[key];
-                        return newObj;
-                    }, {})
-                );
+            if (!token) {
+                throw new Error('Failed to retrieve access token');
+            }
+            const resp = await axios({
+                method: "get",
+                url: this.zoom_url,
+                headers: {
+                    Authorization: "Bearer " + `${token} `,
+                    "Content-Type": "application/json",
+                },
+            });
+            const meetings = resp.data.meetings;
+            const result = meetings.map((obj) =>
+                ["id", "topic"].reduce((newObj, key) => {
+                    newObj[key] = obj[key];
+                    return newObj;
+                }, {})
+            );
+            return APIResponse.success(response, apiId, result, HttpStatus.OK, 'Meeting list fetched succesfully')
+            // return newArray;
 
-                return newArray;
-            }
         }
-        catch (err) {
-            if (err.status == undefined) {
-                console.log("Error : ", err);
-            }
+        catch (e) {
+            const errorMessage = e.message || 'Internal server error';
+            return APIResponse.error(response, apiId, "Internal Server Error", errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -92,94 +95,7 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
             return resp.data.access_token;
         }
         catch (e) {
-            console.error(e.message, "error");
+            throw new Error(e.message);
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-// require("dotenv").config();
-// const axios = require("axios");
-// const btoa = require("btoa");
-// const thirdPartyAPICall = () => {
-//     try {
-
-//         // Make API Call Here 
-//         return "Third Party API Call";
-//     } catch (err) {
-//         // Handle Error Here
-//         console.error(err);
-//     }
-// };
-
-// const getAccessToken = async () => {
-//     try {
-//         base_64 = btoa("bgiOqbEZSMKHgSi0oRqlgQ" + ":" + "hPeg8wNWO5gPH33WU3aXQpY1V3KOJsnS");
-
-//         const resp = await axios({
-//             method: "POST",
-//             url:
-//                 "https://zoom.us/oauth/token?grant_type=account_credentials&account_id=GCqoO7xPQ1-JRuRsPPZO8A",
-//             headers: {
-//                 Authorization: "Basic " + `${base_64} `,
-//             },
-//         });
-
-//         return resp.data.access_token;
-//     } catch (err) {
-//         // Handle Error Here
-//         console.error(err);
-//     }
-// };
-
-// const listZoomMeetings = async () => {
-//     try {
-//         const resp = await axios({
-//             method: "get",
-//             url: "https://api.zoom.us/v2/users/me/meetings",
-//             headers: {
-//                 Authorization: "Bearer " + `${await getAccessToken()} `,
-//                 "Content-Type": "application/json",
-//             },
-//         });
-//         const meetings = resp.data.meetings;
-
-//         const newArray = meetings.map((obj) =>
-//             ["id", "topic"].reduce((newObj, key) => {
-//                 newObj[key] = obj[key];
-//                 return newObj;
-//             }, {})
-//         );
-
-//         return newArray;
-//     } catch (err) {
-//         if (err.status == undefined) {
-//             console.log("Error : ", err);
-//         }
-//     }
-// };
-
-// function generateOTP() {
-//     var digits = "0123456789";
-//     let OTP = "";
-//     for (let i = 0; i < 6; i++) {
-//         OTP += digits[Math.floor(Math.random() * 10)];
-//     }
-//     return OTP;
-// }
-
-
-// module.exports = {
-//     createZoomMeeting,
-//     listZoomMeetings,
-//     thirdPartyAPICall,
-// };
