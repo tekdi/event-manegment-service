@@ -82,6 +82,7 @@ jobs:
         rm -rf manifest/event-service.yaml
         kubectl delete deployment eventmanagement
         kubectl delete service eventmanagement
+        kubectl delete cm event-service-config
         kubectl apply -f manifest/event-service-updated.yaml
         kubectl apply -f manifest/configmap.yaml
         sleep 10
