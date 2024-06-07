@@ -29,6 +29,9 @@ spec:
         name: event-management-service
         ports:
         - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: event-service-config
         resources: {}
       restartPolicy: Always
       serviceAccountName: ""
