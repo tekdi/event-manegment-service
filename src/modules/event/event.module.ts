@@ -11,6 +11,12 @@ import { EventAttendees } from '../attendees/entity/attendees.entity';
 import { CohortMember } from './entities/CohortMembers.entity';
 import { Cohort } from './entities/Cohort.entity';
 import { Users } from './entities/Users.entity';
+import { MeetingsService } from '../meetings/meetings.service';
+import { MeetingAdapterFactory } from '../meetings/meetingadapter';
+import { ZoomMeetingAdapter } from '../meetings/adapter/zoom.adapter';
+import { GoogleMeetingAdapter } from '../meetings/adapter/googleMeet.adapter';
+
+
 
 
 @Module({
@@ -24,6 +30,6 @@ import { Users } from './entities/Users.entity';
     ])
   ],
   controllers: [EventController],
-  providers: [EventService, ConfigService, AttendeesService],
+  providers: [EventService, ConfigService, AttendeesService, MeetingsService, MeetingAdapterFactory, ZoomMeetingAdapter, GoogleMeetingAdapter],
 })
 export class EventModule { }
