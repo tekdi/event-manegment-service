@@ -1,28 +1,29 @@
-import { BadRequestException, HttpStatus, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { MeetingServiceInterface } from '../interface/meeting-service.interface'
 import { CreateMeetingDto } from "../dto/create-Meeting.dto";
 import axios from "axios";
 import { ConfigService } from "@nestjs/config";
-import APIResponse from "src/common/utils/response";
-import { Response } from "express";
+import { UpdateeMeetingDto } from "../dto/update-Meeting.dto";
+
 @Injectable()
 export class ZoomMeetingAdapter implements MeetingServiceInterface {
     private zoom_url: string
     private zoom_auth_url: string;
     private account_id: string;
     private client_id: string;
-    private secret_token: string
+    private secret_token: string;
+    private zoom_update_get_url: string
 
     constructor(private readonly configService: ConfigService) {
         this.zoom_url = this.configService.get('ZOOM_URL')
         this.zoom_auth_url = this.configService.get('ZOOM_AUTH_URL')
+        this.zoom_update_get_url = this.configService.get('ZOOM_UPDATE_GET_URL')
         this.account_id = this.configService.get('ZOOM_ACCOUNT_ID')
         this.client_id = this.configService.get('ZOOM_CLIENT_ID')
         this.secret_token = this.configService.get('ZOOM_SECRET_TOKEN')
     }
     async createMeeting(createMeetingDto: CreateMeetingDto) {
         try {
-            this.checkConfigExistOrNot();
             const token = await this.getToken();
             if (!token) {
                 throw new Error('Failed to retrieve access token');
@@ -49,7 +50,6 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
     }
     async getMeetingList() {
         try {
-            this.checkConfigExistOrNot();
             const token = await this.getToken();
             if (!token) {
                 throw new Error('Failed to retrieve access token');
@@ -93,10 +93,26 @@ export class ZoomMeetingAdapter implements MeetingServiceInterface {
         }
     }
 
-    checkConfigExistOrNot() {
-        if (!this.zoom_url || !this.zoom_auth_url || !this.account_id || !this.client_id || !this.secret_token) {
-            throw new Error('Configuration missing for Zoom meeting');
+    async updateMeeting(meetingId, updateeMeetingDto: UpdateeMeetingDto) {
+        try {
+            const token = await this.getToken();
+            if (!token) {
+                throw new Error('Failed to retrieve access token');
+            }
+            const resp = await axios.patch(`${this.zoom_update_get_url}/${meetingId}`, updateeMeetingDto, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+            return resp;
         }
+        catch (e) {
+            return e;
+        }
+    }
+    checkZoomConfig(): string | null {
+        return (this.zoom_url && this.zoom_auth_url && this.account_id && this.client_id && this.secret_token) ? 'zoom' : null;
     }
 
 }

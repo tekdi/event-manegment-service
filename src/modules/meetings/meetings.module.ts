@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { MeetingsController } from './meetings.controller';
 import { MeetingAdapterFactory } from './meetingadapter';
 import { ZoomMeetingAdapter } from './adapter/zoom.adapter';
-import { GoogleMeetingAdapter } from './adapter/googleMeet.adapter';
 import { MeetingsService } from './meetings.service';
 import { EventService } from '../event/event.service';
 import { Events } from '../event/entities/event.entity';
@@ -28,7 +27,7 @@ import { EventAttendees } from '../attendees/entity/attendees.entity';
     EventModule
   ],
 
-  providers: [MeetingAdapterFactory, ZoomMeetingAdapter, GoogleMeetingAdapter, MeetingsService, EventService, AttendeesService],
+  providers: [MeetingAdapterFactory, ZoomMeetingAdapter, MeetingsService, EventService, AttendeesService],
   controllers: [MeetingsController]
 })
 export class MeetingsModule { }

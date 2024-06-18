@@ -1,6 +1,8 @@
-import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsEnum, IsString, IsUUID, Max, Min, IsJSON, IsLatitude, IsLongitude, IsDateString, IsObject, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-export class CreateMeetingDto {
+
+
+export class UpdateeMeetingDto {
 
     @ApiProperty({
         type: String,
@@ -8,7 +10,6 @@ export class CreateMeetingDto {
         example: 'zoom',
     })
     @IsString()
-    // @IsNotEmpty()
     meetingType: string;
 
     @ApiProperty({
@@ -17,7 +18,7 @@ export class CreateMeetingDto {
         example: 'Test Meeting',
     })
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     topic: string;
 
     @IsNumber()
@@ -30,6 +31,7 @@ export class CreateMeetingDto {
         description: 'Start Datetime',
         example: '2024-03-18T10:00:00Z'
     })
+    @IsOptional()
     start_time: Date;
 
     duration: number;

@@ -4,21 +4,15 @@ import { MeetingAdapterFactory } from './meetingadapter';
 import { Response } from 'express';
 import APIResponse from 'src/common/utils/response';
 import { ConfigService } from '@nestjs/config';
+import { ZoomMeetingAdapter } from './adapter/zoom.adapter';
+import { APIID } from 'src/common/utils/api-id.config';
+
 @Injectable()
 export class MeetingsService {
-    private zoom_url: string
-    private zoom_auth_url: string;
-    private account_id: string;
-    private client_id: string;
-    private secret_token: string
-    constructor(private readonly adapterFactory: MeetingAdapterFactory, private readonly configService: ConfigService) {
-        this.zoom_url = this.configService.get('ZOOM_URL')
-        this.zoom_auth_url = this.configService.get('ZOOM_AUTH_URL')
-        this.account_id = this.configService.get('ZOOM_ACCOUNT_ID')
-        this.client_id = this.configService.get('ZOOM_CLIENT_ID')
-        this.secret_token = this.configService.get('ZOOM_SECRET_TOKEN')
+    constructor(private readonly adapterFactory: MeetingAdapterFactory,
+        private readonly configService: ConfigService,
+        private readonly zoomMeetingAdapter: ZoomMeetingAdapter) {
     }
-
 
     async createMeeting(createMeetingDto: CreateMeetingDto) {
         try {
@@ -32,7 +26,7 @@ export class MeetingsService {
     }
 
     async getMeetingList(meetingName, response: Response) {
-        const apiId = 'api.get.meeting'
+        const apiId = APIID.MEETING_LIST;
         try {
             const meetingType = this.adapterFactory.getAdapter(meetingName);
             const result = await meetingType.getMeetingList();
@@ -44,18 +38,38 @@ export class MeetingsService {
         }
     }
 
-    async getOnlineProvide(response: Response) {
-        const apiId = 'api.onlineProvide.get';
-        const onlineProviders = [];
-        if (this.zoom_url && this.zoom_auth_url && this.account_id && this.client_id && this.secret_token) {
-            onlineProviders.push('zoom')
+    async getOnlineProviders(response: Response) {
+        const apiId = APIID.ONLINE_PROVIDER;
+        try {
+            const onlineProviders = [];
+            const zoomProvider = this.zoomMeetingAdapter.checkZoomConfig();
+            if (zoomProvider) {
+                onlineProviders.push(zoomProvider);
+            }
+            // if (googleMeetProvider) {
+            //     onlineProviders.push(googleMeetProvider);
+            // }
+            if (onlineProviders.length === 0) {
+                return APIResponse.error(response, apiId, 'Not Found', 'providers not found', HttpStatus.NOT_FOUND)
+            }
+            return APIResponse.success(response, apiId, onlineProviders, HttpStatus.OK, 'online providers list fetched succesfully')
         }
-        // if (this.GOOGLE_MEET_API_KEY && this.GOOGLE_MEET_CLIENT_ID && this.GOOGLE_MEET_CLIENT_SECRET && this.GOOGLE_MEET_REDIRECT_URL) {
-        //     onlineProviders.push('googleMeet'); 
-        // }
-        if (onlineProviders.length === 0) {
+        catch (e) {
             return APIResponse.error(response, apiId, 'Not Found', 'provide not found', HttpStatus.NOT_FOUND)
         }
-        return APIResponse.success(response, apiId, onlineProviders, HttpStatus.OK, 'online Provide list fetched succesfully')
+    }
+
+    async updateMeeting(meetingId, updateeMeetingDto) {
+        const apiId = APIID.MEETING_UPDATE;
+        try {
+            const meetingType = this.adapterFactory.getAdapter(updateeMeetingDto.meetingType);
+            const result = await meetingType.updateMeeting(meetingId, updateeMeetingDto);
+            if (result.status === 204) {
+                return result;
+            }
+        }
+        catch (e) {
+            return e;
+        }
     }
 }

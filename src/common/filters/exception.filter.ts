@@ -1,5 +1,5 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import APIResponse from '../utils/response';
 
 @Catch()
@@ -20,7 +20,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
             response,
             this.apiId,
             detailedErrorMessage,
-            exception instanceof HttpException ? exception.name : 'InternalServerError', // error
+            exception instanceof HttpException ? exception.name : 'InternalServerError',
             status
         );
     }

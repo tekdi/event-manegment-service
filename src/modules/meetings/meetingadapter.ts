@@ -1,13 +1,11 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { GoogleMeetingAdapter } from "./adapter/googleMeet.adapter";
 import { ZoomMeetingAdapter } from "./adapter/zoom.adapter";
 import { MeetingServiceInterface } from "./interface/meeting-service.interface";
 
 @Injectable()
 export class MeetingAdapterFactory {
     constructor(
-        private readonly zoomMeetingAdapter: ZoomMeetingAdapter,
-        private readonly googleMeetingAdapter: GoogleMeetingAdapter
+        private readonly zoomMeetingAdapter: ZoomMeetingAdapter
     ) { }
 
     getAdapter(meetingType: string): MeetingServiceInterface {
